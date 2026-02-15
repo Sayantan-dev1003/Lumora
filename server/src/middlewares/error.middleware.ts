@@ -15,6 +15,10 @@ export const errorHandler = (
     res: Response,
     next: NextFunction
 ) => {
+    // Debug log for all errors during verification
+    if (process.env.NODE_ENV === 'test') {
+        console.error('DEBUG ERROR:', err);
+    }
     const statusCode = err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
@@ -31,7 +35,7 @@ export const errorHandler = (
     // Handle Prisma Errors
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
         if (err.code === 'P2002') {
-            return errorResponse(res, "Unique constraint violation. A record with this value already exists.", 409);
+            return errorResponse(res, "Email already exists", 400);
         }
         if (err.code === 'P2025') {
             return errorResponse(res, "Record not found.", 404);

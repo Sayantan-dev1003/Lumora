@@ -41,7 +41,7 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
                 actionType: "task_created",
                 entityType: "task",
                 entityId: task.id
-            });
+            }, tx);
         }
 
         return { task, boardId: list?.boardId };
@@ -105,7 +105,7 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                         actionType: "task_moved",
                         entityType: "task",
                         entityId: taskId
-                    });
+                    }, tx);
                 }
 
             } else {
@@ -210,7 +210,7 @@ export const deleteTask = async (taskId: string, userId: string) => {
                 actionType: "task_deleted",
                 entityType: "task",
                 entityId: taskId
-            });
+            }, tx);
         }
         return { boardId: list?.boardId };
     });

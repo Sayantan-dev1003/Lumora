@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import * as listService from "./list.service";
 import * as boardService from "../board/board.service";
 import { CreateListInput, UpdateListInput } from "./list.types";
+import { successResponse } from "../../utils/response.helper";
 
 export const createList = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -16,10 +17,7 @@ export const createList = async (req: Request, res: Response, next: NextFunction
 
         const list = await listService.createList(userId, { title, boardId });
 
-        res.status(201).json({
-            success: true,
-            list,
-        });
+        return successResponse(res, list, "List created successfully", undefined, 201);
     } catch (error) {
         next(error);
     }
@@ -45,10 +43,7 @@ export const updateList = async (req: Request, res: Response, next: NextFunction
 
         const updatedList = await listService.updateList(listId, userId, input);
 
-        res.status(200).json({
-            success: true,
-            list: updatedList,
-        });
+        return successResponse(res, updatedList, "List updated successfully");
     } catch (error) {
         next(error);
     }
@@ -73,10 +68,7 @@ export const deleteList = async (req: Request, res: Response, next: NextFunction
 
         await listService.deleteList(listId, userId);
 
-        res.status(200).json({
-            success: true,
-            message: "List deleted successfully",
-        });
+        return successResponse(res, null, "List deleted successfully");
     } catch (error) {
         next(error);
     }

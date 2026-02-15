@@ -7,8 +7,13 @@ import { authLimiter } from '../../middlewares/rateLimit.middleware';
 
 const router = Router();
 
-router.post('/signup', authLimiter, validateRequest(signupSchema), authController.signup);
-router.post('/login', authLimiter, validateRequest(loginSchema), authController.login);
+// Apply auth limiter only in non-test environments
+const authRateLimiter = process.env.NODE_ENV !== "test"
+    ? authLimiter
+    : (_req: any, _res: any, next: any) => next();
+
+router.post('/signup', authRateLimiter, validateRequest(signupSchema), authController.signup);
+router.post('/login', authRateLimiter, validateRequest(loginSchema), authController.login);
 router.post('/logout', authController.logout);
 router.get('/me', authMiddleware, authController.getMe);
 

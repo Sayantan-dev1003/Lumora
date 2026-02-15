@@ -10,7 +10,9 @@ export const signup = async (input: SignupInput) => {
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-        throw new Error('Email already exists');
+        const error: any = new Error('Email already exists');
+        error.statusCode = 400;
+        throw error;
     }
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
@@ -38,12 +40,16 @@ export const login = async (input: LoginInput) => {
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-        throw new Error('Invalid credentials');
+        const error: any = new Error('Invalid credentials');
+        error.statusCode = 401;
+        throw error;
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-        throw new Error('Invalid credentials');
+        const error: any = new Error('Invalid credentials');
+        error.statusCode = 401;
+        throw error;
     }
 
     const token = generateAccessToken(user.id);
@@ -65,7 +71,9 @@ export const getUserById = async (userId: string) => {
     });
 
     if (!user) {
-        throw new Error('User not found');
+        const error: any = new Error('User not found');
+        error.statusCode = 404;
+        throw error;
     }
 
     return user;

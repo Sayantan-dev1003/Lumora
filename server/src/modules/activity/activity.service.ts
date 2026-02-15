@@ -1,10 +1,12 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../config/db";
 import { LogActivityInput } from "./activity.types";
 import { getIO } from "../../socket/socket";
 
-export const logActivity = async (input: LogActivityInput) => {
+export const logActivity = async (input: LogActivityInput, tx?: Prisma.TransactionClient) => {
     try {
-        const activity = await prisma.activity.create({
+        const client = tx || prisma;
+        const activity = await client.activity.create({
             data: {
                 boardId: input.boardId,
                 userId: input.userId,

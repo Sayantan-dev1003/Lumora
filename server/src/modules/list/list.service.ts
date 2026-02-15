@@ -30,7 +30,7 @@ export const createList = async (userId: string, input: CreateListInput) => {
             actionType: "list_created",
             entityType: "list",
             entityId: list.id
-        });
+        }, tx);
 
         return { list, boardId: input.boardId };
     });
@@ -104,7 +104,7 @@ export const updateList = async (listId: string, userId: string, input: UpdateLi
             actionType: "list_updated",
             entityType: "list",
             entityId: listId
-        });
+        }, tx);
 
         return { updatedList, boardId: existingList.boardId };
     });
@@ -158,7 +158,7 @@ export const deleteList = async (listId: string, userId: string) => {
             actionType: "list_deleted",
             entityType: "list",
             entityId: listId
-        });
+        }, tx);
 
         return { boardId: list.boardId };
     });

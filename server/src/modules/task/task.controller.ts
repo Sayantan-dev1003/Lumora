@@ -24,7 +24,7 @@ export const createTask = async (req: Request, res: Response, next: NextFunction
 
         const task = await taskService.createTask(userId, { title, listId, description });
 
-        return successResponse(res, task, "Task created successfully", undefined);
+        return successResponse(res, task, "Task created successfully", undefined, 201);
     } catch (error) {
         next(error);
     }

@@ -20,7 +20,10 @@ app.use(cors({
 }));
 app.use(helmet());
 app.use(morgan("dev"));
-app.use(globalLimiter); // Apply global rate limiter
+// Apply global rate limiter only in non-test environments
+if (process.env.NODE_ENV !== "test") {
+  app.use(globalLimiter);
+}
 app.use(express.json({ limit: "10kb" }));
 app.use(sanitizeInput); // Sanitize inputs after parsing body
 app.use(cookieParser());

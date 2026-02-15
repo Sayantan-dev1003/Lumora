@@ -10,7 +10,7 @@ export const createBoard = async (req: Request, res: Response, next: NextFunctio
 
         const board = await boardService.createBoard(userId, { title });
 
-        return successResponse(res, board, "Board created successfully");
+        return successResponse(res, board, "Board created successfully", undefined, 201);
     } catch (error) {
         next(error);
     }

@@ -11,9 +11,10 @@ export const successResponse = (
     res: Response,
     data: any,
     message: string = 'Success',
-    pagination?: PaginationData
+    pagination?: PaginationData,
+    statusCode: number = 200
 ) => {
-    return res.status(200).json({
+    return res.status(statusCode).json({
         success: true,
         message,
         data,
