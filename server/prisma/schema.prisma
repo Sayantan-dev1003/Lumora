@@ -1,0 +1,93 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  boards           Board[]       @relation("Owner")
+  boardMemberships BoardMember[]
+  assignedTasks    Task[]
+  activities       Activity[]
+
+  @@index([email])
+}
+
+model Board {
+  id        String   @id @default(uuid())
+  title     String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner      User          @relation("Owner", fields: [ownerId], references: [id])
+  members    BoardMember[]
+  lists      List[]
+  activities Activity[]
+}
+
+model BoardMember {
+  id      String @id @default(uuid())
+  boardId String
+  userId  String
+  role    String // "admin" | "member"
+
+  board Board @relation(fields: [boardId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([boardId, userId])
+}
+
+model List {
+  id        String   @id @default(uuid())
+  title     String
+  boardId   String
+  position  Int
+  createdAt DateTime @default(now())
+
+  board Board  @relation(fields: [boardId], references: [id])
+  tasks Task[]
+
+  @@index([boardId])
+}
+
+model Task {
+  id             String   @id @default(uuid())
+  title          String
+  description    String? // Optional
+  listId         String
+  position       Int
+  assignedUserId String? // Optional
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  list         List  @relation(fields: [listId], references: [id])
+  assignedUser User? @relation(fields: [assignedUserId], references: [id])
+
+  @@index([listId])
+  @@index([assignedUserId])
+}
+
+model Activity {
+  id         String   @id @default(uuid())
+  boardId    String
+  userId     String
+  actionType String
+  entityType String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  board Board @relation(fields: [boardId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@index([boardId])
+}
