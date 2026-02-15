@@ -44,6 +44,8 @@ model BoardMember {
   board Board @relation(fields: [boardId], references: [id])
   user  User  @relation(fields: [userId], references: [id])
 
+  @@index([boardId])
+  @@index([userId]) // Optimized for filtering by user
   @@unique([boardId, userId])
 }
 
@@ -58,6 +60,7 @@ model List {
   tasks Task[]
 
   @@index([boardId])
+  @@index([boardId, position]) // Optimized for fetching lists in order
 }
 
 model Task {
@@ -75,6 +78,7 @@ model Task {
 
   @@index([listId])
   @@index([assignedUserId])
+  @@index([listId, position]) // Optimized for fetching tasks in order
 }
 
 model Activity {
@@ -90,4 +94,5 @@ model Activity {
   user  User  @relation(fields: [userId], references: [id])
 
   @@index([boardId])
+  @@index([createdAt]) // Optimized for sorting activity logs
 }

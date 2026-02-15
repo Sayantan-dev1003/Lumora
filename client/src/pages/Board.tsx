@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { fetchBoard } from '@/services/api';
-import { joinBoard, leaveBoard } from '@/services/socket';
+import { joinBoard, leaveBoard, onTaskCreated, onTaskUpdated, onTaskDeleted, onListCreated, onListUpdated, onListDeleted, onActivityCreated, getSocket } from '@/services/socket';
+import { toast } from 'sonner';
 import BoardHeader from '@/components/board/BoardHeader';
 import ListColumn from '@/components/board/ListColumn';
 import TaskModal from '@/components/modals/TaskModal';
@@ -34,7 +35,81 @@ const Board = () => {
   useEffect(() => {
     if (boardId) {
       joinBoard(boardId);
-      return () => leaveBoard(boardId);
+
+      const handleTaskCreated = (newTask: Task) => {
+        setLists(prev => prev.map(list =>
+          list.id === newTask.listId
+            ? { ...list, tasks: [...list.tasks, newTask] }
+            : list
+        ));
+        toast.success(`Task "${newTask.title}" created`);
+      };
+
+      const handleTaskUpdated = (updatedTask: Task) => {
+        setLists(prev => {
+          const taskExists = prev.some(l => l.tasks.some(t => t.id === updatedTask.id));
+          if (!taskExists) return prev;
+
+          const listsWithoutTask = prev.map(l => ({
+            ...l,
+            tasks: l.tasks.filter(t => t.id !== updatedTask.id)
+          }));
+
+          return listsWithoutTask.map(l =>
+            l.id === updatedTask.listId
+              ? {
+                ...l,
+                tasks: [...l.tasks, updatedTask].sort((a, b) => a.position - b.position)
+              }
+              : l
+          );
+        });
+      };
+
+      const handleTaskDeleted = ({ taskId }: { taskId: string }) => {
+        setLists(prev => prev.map(l => ({
+          ...l,
+          tasks: l.tasks.filter(t => t.id !== taskId)
+        })));
+        toast.info("Task deleted");
+      };
+
+      const handleListCreated = (newList: List) => {
+        setLists(prev => {
+          if (prev.find(l => l.id === newList.id)) return prev;
+          return [...prev, { ...newList, tasks: [] }];
+        });
+        toast.success(`List "${newList.title}" created`);
+      };
+
+      const handleListUpdated = (updatedList: List) => {
+        setLists(prev => prev.map(l => l.id === updatedList.id ? { ...l, ...updatedList } : l));
+      };
+
+      const handleListDeleted = ({ listId }: { listId: string }) => {
+        setLists(prev => prev.filter(l => l.id !== listId));
+        toast.info("List deleted");
+      };
+
+      // Activity handler skipped for now as UI logic is separate
+
+      onTaskCreated(handleTaskCreated);
+      onTaskUpdated(handleTaskUpdated);
+      onTaskDeleted(handleTaskDeleted);
+      onListCreated(handleListCreated);
+      onListUpdated(handleListUpdated);
+      onListDeleted(handleListDeleted);
+
+      return () => {
+        leaveBoard(boardId);
+        const socket = getSocket();
+        socket?.off('task_created', handleTaskCreated);
+        socket?.off('task_updated', handleTaskUpdated);
+        socket?.off('task_deleted', handleTaskDeleted);
+        socket?.off('list_created', handleListCreated);
+        socket?.off('list_updated', handleListUpdated);
+        socket?.off('list_deleted', handleListDeleted);
+      };
     }
   }, [boardId]);
 
