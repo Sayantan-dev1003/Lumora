@@ -3,100 +3,105 @@ import { useAuthStore } from '@/store/authStore';
 import type { Board, BoardSummary, Task, User } from '@/types';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
+  // We use cookie-based auth, but keeping the token logic if user chooses to use it in other parts
   const token = useAuthStore.getState().token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
 // --- Auth ---
 export const loginApi = async (email: string, password: string): Promise<{ user: User; token: string }> => {
-  // Mock for frontend-only development
-  return {
-    user: { id: '1', name: 'Demo User', email },
-    token: 'mock-jwt-token',
-  };
-  // const { data } = await api.post('/auth/login', { email, password });
-  // return data;
+  const { data } = await api.post('/auth/login', { email, password });
+  return data;
 };
 
 export const signupApi = async (name: string, email: string, password: string): Promise<{ user: User; token: string }> => {
-  return {
-    user: { id: '1', name, email },
-    token: 'mock-jwt-token',
-  };
+  const { data } = await api.post('/auth/signup', { name, email, password });
+  return data;
+};
+
+export const logoutApi = async (): Promise<void> => {
+  await api.post('/auth/logout');
+};
+
+export const fetchMeApi = async (): Promise<{ user: User }> => {
+  const { data } = await api.get('/auth/me');
+  return data;
 };
 
 // --- Boards ---
-export const fetchBoards = async (): Promise<BoardSummary[]> => {
-  // Mock data
-  return [
-    { id: '1', title: 'Product Launch', memberCount: 4, createdAt: new Date().toISOString() },
-    { id: '2', title: 'Sprint Planning', memberCount: 3, createdAt: new Date().toISOString() },
-    { id: '3', title: 'Design System', memberCount: 2, createdAt: new Date().toISOString() },
-  ];
+export const fetchBoards = async (page = 1, limit = 10): Promise<{ boards: BoardSummary[], total: number }> => {
+  const { data } = await api.get(`/boards?page=${page}&limit=${limit}`);
+  return data;
 };
 
 export const fetchBoard = async (boardId: string): Promise<Board> => {
-  return {
-    id: boardId,
-    title: boardId === '1' ? 'Product Launch' : boardId === '2' ? 'Sprint Planning' : 'Design System',
-    members: [
-      { id: '1', name: 'Alice', email: 'alice@example.com' },
-      { id: '2', name: 'Bob', email: 'bob@example.com' },
-      { id: '3', name: 'Charlie', email: 'charlie@example.com' },
-    ],
-    lists: [
-      {
-        id: 'list-1', title: 'To Do', boardId, position: 0,
-        tasks: [
-          { id: 'task-1', title: 'Research competitors', listId: 'list-1', position: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), description: 'Analyze top 5 competitors' },
-          { id: 'task-2', title: 'Define MVP scope', listId: 'list-1', position: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-          { id: 'task-3', title: 'Create wireframes', listId: 'list-1', position: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        ],
-      },
-      {
-        id: 'list-2', title: 'In Progress', boardId, position: 1,
-        tasks: [
-          { id: 'task-4', title: 'Build authentication', listId: 'list-2', position: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), assigneeId: '1' },
-          { id: 'task-5', title: 'Design landing page', listId: 'list-2', position: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), assigneeId: '2' },
-        ],
-      },
-      {
-        id: 'list-3', title: 'Done', boardId, position: 2,
-        tasks: [
-          { id: 'task-6', title: 'Setup project repo', listId: 'list-3', position: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        ],
-      },
-    ],
-    createdAt: new Date().toISOString(),
-  };
+  const { data } = await api.get(`/boards/${boardId}`);
+  return data;
 };
 
 export const createBoard = async (title: string): Promise<BoardSummary> => {
-  return { id: Date.now().toString(), title, memberCount: 1, createdAt: new Date().toISOString() };
+  const { data } = await api.post('/boards', { title });
+  return data;
+};
+
+export const deleteBoard = async (boardId: string): Promise<void> => {
+  await api.delete(`/boards/${boardId}`);
 };
 
 // --- Tasks ---
 export const createTask = async (listId: string, title: string): Promise<Task> => {
-  return { id: Date.now().toString(), title, listId, position: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const { data } = await api.post('/tasks', { listId, title });
+  return data;
 };
 
 export const updateTask = async (taskId: string, updates: Partial<Task>): Promise<Task> => {
-  return { id: taskId, title: '', listId: '', position: 0, createdAt: '', updatedAt: new Date().toISOString(), ...updates } as Task;
+  const { data } = await api.patch(`/tasks/${taskId}`, updates);
+  return data;
 };
 
 export const deleteTask = async (taskId: string): Promise<void> => {
-  // await api.delete(`/tasks/${taskId}`);
+  await api.delete(`/tasks/${taskId}`);
+};
+
+export const searchTasks = async (query: string): Promise<Task[]> => {
+  const { data } = await api.get(`/tasks?search=${query}`);
+  return data;
 };
 
 // --- Lists ---
 export const createList = async (boardId: string, title: string) => {
-  return { id: Date.now().toString(), title, boardId, position: 0, tasks: [] };
+  const { data } = await api.post('/lists', { boardId, title });
+  return data;
+};
+
+export const updateList = async (listId: string, updates: any) => {
+  const { data } = await api.patch(`/lists/${listId}`, updates);
+  return data;
+};
+
+export const deleteList = async (listId: string) => {
+  await api.delete(`/lists/${listId}`);
+};
+
+// --- Activity ---
+export const fetchActivity = async (boardId: string) => {
+  const { data } = await api.get(`/boards/${boardId}/activity`);
+  return data;
 };
 
 export default api;
