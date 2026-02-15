@@ -39,9 +39,8 @@ const Dashboard = () => {
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-sidebar p-4 gap-4">
-        <div className="flex items-center gap-2 px-2 mb-4">
-          <LayoutDashboard className="h-6 w-6 text-accent-foreground" />
-          <h2 className="text-xl font-bold">TaskFlow</h2>
+        <div className="flex items-center">
+          <img src="/logo.png" alt="Lumora" className="h-16" />
         </div>
         <nav className="flex-1 space-y-1">
           <button className="flex items-center gap-2 w-full rounded-xl px-3 py-2 text-sm font-medium bg-sidebar-accent text-sidebar-accent-foreground">

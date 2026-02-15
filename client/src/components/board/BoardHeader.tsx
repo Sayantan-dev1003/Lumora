@@ -18,9 +18,10 @@ const BoardHeader = ({ title, members }: BoardHeaderProps) => {
         <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="rounded-xl">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-xl md:text-2xl font-bold">{title}</h1>
+        <img src="/logo.png" alt="Lumora" className="h-12" />
       </div>
       <div className="flex items-center -space-x-2">
+        <h1 className="text-lg md:text-xl font-bold mr-6">{title}</h1>
         {members.slice(0, 4).map((m) => (
           <Avatar key={m.id} className="h-8 w-8 border-2 border-background">
             <AvatarFallback className="text-xs bg-accent text-accent-foreground">

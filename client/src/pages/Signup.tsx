@@ -37,6 +37,9 @@ const Signup = () => {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md shadow-lg border-border/50">
         <CardHeader className="text-center">
+          <div className="flex justify-center">
+            <img src="/logo.png" alt="Lumora" className="h-32" />
+          </div>
           <CardTitle className="text-3xl">Create account</CardTitle>
           <CardDescription>Get started with your workspace</CardDescription>
         </CardHeader>
