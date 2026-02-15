@@ -1,0 +1,43 @@
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import type { User } from '@/types';
+
+interface BoardHeaderProps {
+  title: string;
+  members: User[];
+}
+
+const BoardHeader = ({ title, members }: BoardHeaderProps) => {
+  const navigate = useNavigate();
+
+  return (
+    <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="rounded-xl">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-xl md:text-2xl font-bold">{title}</h1>
+      </div>
+      <div className="flex items-center -space-x-2">
+        {members.slice(0, 4).map((m) => (
+          <Avatar key={m.id} className="h-8 w-8 border-2 border-background">
+            <AvatarFallback className="text-xs bg-accent text-accent-foreground">
+              {m.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+        ))}
+        {members.length > 4 && (
+          <Avatar className="h-8 w-8 border-2 border-background">
+            <AvatarFallback className="text-xs bg-muted text-muted-foreground">
+              +{members.length - 4}
+            </AvatarFallback>
+          </Avatar>
+        )}
+      </div>
+    </header>
+  );
+};
+
+export default BoardHeader;

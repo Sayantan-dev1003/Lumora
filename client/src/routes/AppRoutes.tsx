@@ -1,0 +1,31 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
+import Login from '@/pages/Login';
+import Signup from '@/pages/Signup';
+import Dashboard from '@/pages/Dashboard';
+import Board from '@/pages/Board';
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+};
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+};
+
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+    <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+    <Route path="/board/:boardId" element={<ProtectedRoute><Board /></ProtectedRoute>} />
+    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+  </Routes>
+);
+
+export default AppRoutes;
