@@ -1,6 +1,6 @@
 import { Task } from "@prisma/client";
 import prisma from "../../config/db";
-import { CreateTaskInput, UpdateTaskInput } from "./task.types";
+import { CreateTaskInput, UpdateTaskInput, MoveTaskInput } from "./task.types";
 
 import { logActivity } from "../activity/activity.service";
 import { getIO } from "../../socket/socket";
@@ -93,6 +93,143 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
     return result.task;
 };
 
+export const moveTask = async (taskId: string, userId: string, input: MoveTaskInput) => {
+    const { sourceListId, destinationListId, sourceIndex, destinationIndex } = input;
+
+    const result = await prisma.$transaction(async (tx) => {
+        const task = await tx.task.findUnique({ where: { id: taskId } });
+        if (!task) throw new Error("Task not found");
+
+        let savedTask;
+        let finalBoardId;
+
+        if (sourceListId === destinationListId) {
+            // Same List Reorder
+            const tasks = await tx.task.findMany({
+                where: { listId: sourceListId },
+                orderBy: { position: "asc" }
+            });
+
+            // Filter out the moving task to avoid duplication in array manipulation
+            const otherTasks = tasks.filter(t => t.id !== taskId);
+
+            // Insert at new index
+            const reordered = [
+                ...otherTasks.slice(0, destinationIndex),
+                task,
+                ...otherTasks.slice(destinationIndex)
+            ];
+
+            // Reassign positions
+            for (let i = 0; i < reordered.length; i++) {
+                if (reordered[i].id === taskId) {
+                    savedTask = await tx.task.update({
+                        where: { id: taskId },
+                        data: { position: i + 1 } // 1-based indexing for safety/convention
+                    });
+                } else {
+                    if (reordered[i].position !== i + 1) {
+                        await tx.task.update({
+                            where: { id: reordered[i].id },
+                            data: { position: i + 1 }
+                        });
+                    }
+                }
+            }
+
+            // Get boardId for emission
+            const list = await tx.list.findUnique({ where: { id: sourceListId }, select: { boardId: true } });
+            finalBoardId = list?.boardId;
+
+        } else {
+            // Cross List Move
+            const sourceTasks = await tx.task.findMany({
+                where: { listId: sourceListId },
+                orderBy: { position: "asc" }
+            });
+
+            const destTasks = await tx.task.findMany({
+                where: { listId: destinationListId },
+                orderBy: { position: "asc" }
+            });
+
+            // Remove from source
+            const updatedSource = sourceTasks.filter(t => t.id !== taskId);
+
+            // Insert into destination
+            const updatedDest = [
+                ...destTasks.slice(0, destinationIndex),
+                task,
+                ...destTasks.slice(destinationIndex)
+            ];
+
+            // Update moved task listId and position
+            savedTask = await tx.task.update({
+                where: { id: taskId },
+                data: {
+                    listId: destinationListId,
+                    position: destinationIndex + 1
+                }
+            });
+
+            // Reassign positions in source
+            for (let i = 0; i < updatedSource.length; i++) {
+                if (updatedSource[i].position !== i + 1) {
+                    await tx.task.update({
+                        where: { id: updatedSource[i].id },
+                        data: { position: i + 1 }
+                    });
+                }
+            }
+
+            // Reassign positions in destination
+            for (let i = 0; i < updatedDest.length; i++) {
+                if (updatedDest[i].id !== taskId && updatedDest[i].position !== i + 1) {
+                    await tx.task.update({
+                        where: { id: updatedDest[i].id },
+                        data: { position: i + 1 }
+                    });
+                }
+            }
+
+            const list = await tx.list.findUnique({ where: { id: destinationListId }, select: { boardId: true } });
+            finalBoardId = list?.boardId;
+
+            // Activity Log (Cross List)
+            try {
+                if (finalBoardId) {
+                    await logActivity({
+                        boardId: finalBoardId,
+                        userId,
+                        actionType: "task_moved",
+                        entityType: "task",
+                        entityId: taskId
+                    }, undefined);
+                }
+            } catch (e) {
+                console.error("Failed to log activity", e);
+            }
+        }
+
+        return { task: savedTask, boardId: finalBoardId };
+    });
+
+    if (result.boardId && result.task) {
+        getIO().to(result.boardId).emit("task_moved", {
+            taskId: result.task.id,
+            sourceListId,
+            destinationListId,
+            destinationIndex,
+            task: result.task
+        });
+
+        // Also emit task_updated to ensure full sync
+        getIO().to(result.boardId).emit("task_updated", result.task);
+    }
+
+    return result.task;
+};
+
 export const updateTask = async (taskId: string, userId: string, input: UpdateTaskInput) => {
 
     const result = await prisma.$transaction(async (tx) => {
@@ -104,17 +241,22 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
             throw new Error("Task not found");
         }
 
+        // Initialize final values with current or new values
+        const finalListId = input.listId || existingTask.listId;
+        const finalPosition = input.position !== undefined ? input.position : existingTask.position;
+
+        console.log(`[updateTask] Processing Task ${taskId}`);
+        console.log(`[updateTask] Input ListId: ${input.listId}, Existing: ${existingTask.listId} -> Final: ${finalListId}`);
+        console.log(`[updateTask] Input Pos: ${input.position}, Existing: ${existingTask.position} -> Final: ${finalPosition}`);
+
+
         // Logic for drag-and-drop / Position Update
         if (
-            (input.listId && input.listId !== existingTask.listId) ||
-            (input.position !== undefined && input.position !== existingTask.position)
+            finalListId !== existingTask.listId ||
+            finalPosition !== existingTask.position
         ) {
-            const newListId = input.listId || existingTask.listId;
-            const newPosition = input.position !== undefined ? input.position : existingTask.position; // Default to current position if not changing list? No, if list changes but pos not provided, append to end? 
-            // PROMPT says: "Move task between lists: Input: { listId: newListId, position: newPosition }"
-            // If only position changed: "Reorder tasks in same list"
 
-            if (newListId !== existingTask.listId) {
+            if (finalListId !== existingTask.listId) {
                 // Moving to a DIFFERENT list
 
                 // 1. Remove from old list (shift others down/up to fill gap)
@@ -129,28 +271,32 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                 // 2. Make space in new list
                 await tx.task.updateMany({
                     where: {
-                        listId: newListId,
-                        position: { gte: newPosition },
+                        listId: finalListId,
+                        position: { gte: finalPosition },
                     },
                     data: { position: { increment: 1 } },
                 });
 
                 // Log activity (task_moved)
-                const list = await tx.list.findUnique({ where: { id: existingTask.listId }, select: { boardId: true } });
-                if (list) {
-                    await logActivity({
-                        boardId: list.boardId,
-                        userId,
-                        actionType: "task_moved",
-                        entityType: "task",
-                        entityId: taskId
-                    }, tx);
+                try {
+                    const list = await prisma.list.findUnique({ where: { id: existingTask.listId }, select: { boardId: true } });
+                    if (list) {
+                        await logActivity({
+                            boardId: list.boardId,
+                            userId,
+                            actionType: "task_moved",
+                            entityType: "task",
+                            entityId: taskId
+                        }, undefined);
+                    }
+                } catch (e) {
+                    console.error("[updateTask] Failed to log task_moved:", e);
                 }
 
             } else {
 
                 // Reordering in SAME list
-                const isMovingDown = newPosition > existingTask.position;
+                const isMovingDown = finalPosition > existingTask.position;
 
                 if (isMovingDown) {
                     // Moving down: Shift items between old and new position UP (-1)
@@ -159,7 +305,7 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                             listId: existingTask.listId,
                             position: {
                                 gt: existingTask.position,
-                                lte: newPosition
+                                lte: finalPosition
                             }
                         },
                         data: {
@@ -172,7 +318,7 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                         where: {
                             listId: existingTask.listId,
                             position: {
-                                gte: newPosition,
+                                gte: finalPosition,
                                 lt: existingTask.position
                             }
                         },
@@ -187,8 +333,7 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
         }
 
         // Get Board ID for assignment logic
-        const targetListId = input.listId || existingTask.listId;
-        const list = await tx.list.findUnique({ where: { id: targetListId }, select: { boardId: true } });
+        const list = await tx.list.findUnique({ where: { id: finalListId }, select: { boardId: true } });
         const boardId = list?.boardId;
 
         // Handle assignment change logging & Auto-Membership
@@ -218,22 +363,27 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                     newMemberAdded = true;
                 }
 
-                await logActivity({
-                    boardId: boardId,
-                    userId,
-                    actionType: "task_assigned",
-                    entityType: "task",
-                    entityId: taskId
-                }, tx);
+                try {
+                    await logActivity({
+                        boardId: boardId,
+                        userId,
+                        actionType: "task_assigned",
+                        entityType: "task",
+                        entityId: taskId
+                    }, undefined);
+                } catch (e) { console.error("[updateTask] Failed to log task_assigned:", e); }
+
             } else if (input.assignedUserId === null && boardId) {
                 // Unassigned
-                await logActivity({
-                    boardId: boardId,
-                    userId,
-                    actionType: "task_unassigned",
-                    entityType: "task",
-                    entityId: taskId
-                }, tx);
+                try {
+                    await logActivity({
+                        boardId: boardId,
+                        userId,
+                        actionType: "task_unassigned",
+                        entityType: "task",
+                        entityId: taskId
+                    }, undefined);
+                } catch (e) { console.error("[updateTask] Failed to log task_unassigned:", e); }
             }
         }
 
@@ -244,8 +394,8 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                 title: input.title,
                 description: input.description,
                 assignedUserId: input.assignedUserId,
-                listId: input.listId,
-                position: input.position,
+                listId: finalListId,
+                position: finalPosition,
             },
         });
 

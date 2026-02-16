@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { fetchBoard, createList, createTask, updateTask, deleteTask } from '@/services/api';
+import { fetchBoard, createList, createTask, updateTask, moveTaskApi, deleteTask } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { joinBoard, leaveBoard, onTaskCreated, onTaskUpdated, onTaskDeleted, onListCreated, onListUpdated, onListDeleted, onActivityCreated, getSocket } from '@/services/socket';
 import { toast } from 'sonner';
@@ -155,51 +155,36 @@ const Board = () => {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    const task = activeTask; // Snapshot from drag start
     setActiveTask(null);
 
+    if (!over || !task) return;
+
     const activeId = active.id as string;
-    const overId = over?.id as string;
 
-    if (!overId) return;
+    // Find where the task ended up in the current state (modified by handleDragOver)
+    const destList = lists.find(l => l.tasks.some(t => t.id === activeId));
+    if (!destList) return;
 
-    const activeList = lists.find((l) => l.tasks.some((t) => t.id === activeId));
-    const overList = lists.find((l) => l.id === overId || l.tasks.some((t) => t.id === overId));
+    const destIndex = destList.tasks.findIndex(t => t.id === activeId);
 
-    if (!activeList || !overList) return;
+    // Calculate source parameters from the snapshot
+    const sourceListId = task.listId;
+    const sourceIndex = task.position - 1;
 
-    if (activeList.id === overList.id) {
-      const oldIndex = activeList.tasks.findIndex((t) => t.id === activeId);
-      const newIndex = overList.tasks.findIndex((t) => t.id === overId);
+    if (destList.id === sourceListId && destIndex === sourceIndex) {
+      return; // No change
+    }
 
-      if (oldIndex !== newIndex && oldIndex !== -1 && newIndex !== -1) {
-        setLists((prev) =>
-          prev.map((l) =>
-            l.id === activeList.id ? { ...l, tasks: arrayMove(l.tasks, oldIndex, newIndex) } : l
-          )
-        );
-
-        try {
-          // Always send listId in case it was a move between lists (handled by DragOver)
-          await updateTask(activeId, { position: newIndex + 1, listId: overList.id });
-        } catch (error) {
-          toast.error('Failed to reorder task');
-        }
-      }
-    } else {
-      // Moved between lists (state already updated in handleDragOver)
-      // This block might not be reached if handleDragOver updates the state such that activeList === overList
-      // But if it IS reached (e.g. DragOver didn't run or update yet?), we keep it.
-      const newIndex = overList.tasks.findIndex((t) => t.id === activeId);
-      const finalPosition = (newIndex >= 0 ? newIndex : overList.tasks.length) + 1;
-
-      try {
-        await updateTask(activeId, {
-          listId: overList.id,
-          position: finalPosition,
-        });
-      } catch (error) {
-        toast.error('Failed to move task');
-      }
+    try {
+      await moveTaskApi(activeId, {
+        sourceListId,
+        destinationListId: destList.id,
+        sourceIndex,
+        destinationIndex: destIndex
+      });
+    } catch (error) {
+      toast.error("Failed to move task");
     }
   };
 

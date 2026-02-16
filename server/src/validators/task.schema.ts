@@ -35,6 +35,18 @@ export const reorderTaskSchema = z.object({
     }),
 });
 
+export const moveTaskSchema = z.object({
+    params: z.object({
+        id: uuidSchema,
+    }),
+    body: z.object({
+        sourceListId: uuidSchema,
+        destinationListId: uuidSchema,
+        sourceIndex: z.number().int().min(0),
+        destinationIndex: z.number().int().min(0),
+    }),
+});
+
 export const searchTaskSchema = z.object({
     query: paginationSchema.extend({
         search: z.string().optional(),

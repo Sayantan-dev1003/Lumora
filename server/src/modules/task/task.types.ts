@@ -15,6 +15,13 @@ export interface UpdateTaskInput {
     position?: number;
 }
 
+export interface MoveTaskInput {
+    sourceListId: string;
+    destinationListId: string;
+    sourceIndex: number;
+    destinationIndex: number;
+}
+
 export interface TaskResponse {
     success: boolean;
     task: Task;

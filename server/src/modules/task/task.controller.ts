@@ -121,3 +121,47 @@ export const searchTasks = async (req: Request, res: Response, next: NextFunctio
         next(error);
     }
 };
+
+export const moveTask = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.userId!;
+        const taskId = req.params.id as string;
+        const { sourceListId, destinationListId, sourceIndex, destinationIndex } = req.body;
+
+        const task = await taskService.getTaskById(taskId);
+        if (!task) {
+            return errorResponse(res, "Task not found", 404);
+        }
+
+        // Check permission on current board
+        const isMember = await boardService.isBoardMember(userId, (task as any).list.boardId);
+        if (!isMember) {
+            return errorResponse(res, "Task not found", 404);
+        }
+
+        // If moving to a new list, verify membership of target list's board
+        if (sourceListId !== destinationListId) {
+            const targetList = await listService.getListById(destinationListId);
+            if (!targetList) {
+                return errorResponse(res, "Destination list not found", 404);
+            }
+            if (targetList.boardId !== (task as any).list.boardId) {
+                const isTargetMember = await boardService.isBoardMember(userId, targetList.boardId);
+                if (!isTargetMember) {
+                    return errorResponse(res, "Access denied to target board", 403);
+                }
+            }
+        }
+
+        const updatedTask = await taskService.moveTask(taskId, userId, {
+            sourceListId,
+            destinationListId,
+            sourceIndex,
+            destinationIndex
+        });
+
+        return successResponse(res, updatedTask, "Task moved successfully");
+    } catch (error) {
+        next(error);
+    }
+};

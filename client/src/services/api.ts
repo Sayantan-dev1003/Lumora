@@ -90,6 +90,10 @@ export const deleteTask = async (taskId: string): Promise<void> => {
   await api.delete(`/tasks/${taskId}`);
 };
 
+export const moveTaskApi = async (taskId: string, payload: { sourceListId: string, destinationListId: string, sourceIndex: number, destinationIndex: number }): Promise<void> => {
+  await api.patch(`/tasks/${taskId}/move`, payload);
+};
+
 export const searchTasks = async (query: string): Promise<Task[]> => {
   const { data } = await api.get(`/tasks?search=${query}`);
   return data.data;
