@@ -24,6 +24,10 @@ export const disconnectSocket = () => {
   }
 };
 
+export const onMemberAdded = (callback: (data: { boardId: string, member: any }) => void) => {
+  socket.on('member_added', callback);
+};
+
 export const joinBoard = (boardId: string) => {
   if (!socket) connectSocket();
   socket?.emit('join_board', { boardId });

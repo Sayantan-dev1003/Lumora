@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { fetchBoard, createList, createTask, updateTask, moveTaskApi, deleteTask } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
-import { joinBoard, leaveBoard, onTaskCreated, onTaskUpdated, onTaskDeleted, onListCreated, onListUpdated, onListDeleted, onActivityCreated, getSocket } from '@/services/socket';
+import { joinBoard, leaveBoard, onTaskCreated, onTaskUpdated, onTaskDeleted, onListCreated, onListUpdated, onListDeleted, onActivityCreated, getSocket, onMemberAdded } from '@/services/socket';
 import { toast } from 'sonner';
 import BoardHeader from '@/components/board/BoardHeader';
 import ListColumn from '@/components/board/ListColumn';
@@ -22,6 +22,7 @@ const Board = () => {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [addingList, setAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
+  const queryClient = useQueryClient();
 
   const { data: board, isLoading } = useQuery({
     queryKey: ['board', boardId],
@@ -96,6 +97,18 @@ const Board = () => {
       };
 
       // Activity handler skipped for now as UI logic is separate
+      const handleMemberAdded = ({ member }: { member: any }) => {
+        queryClient.setQueryData(['board', boardId], (oldData: any) => {
+          if (!oldData) return oldData;
+          // Check if already exists
+          if (oldData.members.find((m: any) => m.user.id === member.user.id)) return oldData;
+          return {
+            ...oldData,
+            members: [...oldData.members, member]
+          };
+        });
+        toast.success(`${member.user.name} added to board`);
+      };
 
       onTaskCreated(handleTaskCreated);
       onTaskUpdated(handleTaskUpdated);
@@ -113,6 +126,7 @@ const Board = () => {
         socket?.off('list_created', handleListCreated);
         socket?.off('list_updated', handleListUpdated);
         socket?.off('list_deleted', handleListDeleted);
+        socket?.off('member_added', handleMemberAdded);
       };
     }
   }, [boardId]);
@@ -242,26 +256,28 @@ const Board = () => {
               <ListColumn key={list.id} list={list} onAddTask={handleAddTask} />
             ))}
 
-            {/* Add list */}
-            {addingList ? (
-              <div className="flex-shrink-0 w-72 md:w-80 bg-muted/60 rounded-xl p-3 space-y-2">
-                <Input
-                  autoFocus
-                  placeholder="List title..."
-                  value={newListTitle}
-                  onChange={(e) => setNewListTitle(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddList(); if (e.key === 'Escape') setAddingList(false); }}
-                  className="rounded-lg"
-                />
-                <div className="flex gap-1">
-                  <Button size="sm" onClick={handleAddList} className="rounded-lg">Add</Button>
-                  <Button size="sm" variant="ghost" onClick={() => setAddingList(false)}><X className="h-3 w-3" /></Button>
+            {/* Add list - Only for admins */}
+            {board?.members.find((m) => m.userId === currentUser?.id)?.role === 'admin' && (
+              addingList ? (
+                <div className="flex-shrink-0 w-72 md:w-80 bg-muted/60 rounded-xl p-3 space-y-2">
+                  <Input
+                    autoFocus
+                    placeholder="List title..."
+                    value={newListTitle}
+                    onChange={(e) => setNewListTitle(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddList(); if (e.key === 'Escape') setAddingList(false); }}
+                    className="rounded-lg"
+                  />
+                  <div className="flex gap-1">
+                    <Button size="sm" onClick={handleAddList} className="rounded-lg">Add</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setAddingList(false)}><X className="h-3 w-3" /></Button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <Button variant="outline" onClick={() => setAddingList(true)} className="flex-shrink-0 w-72 md:w-80 rounded-xl justify-start text-muted-foreground border-dashed">
-                <Plus className="h-4 w-4 mr-2" /> Add another list
-              </Button>
+              ) : (
+                <Button variant="outline" onClick={() => setAddingList(true)} className="flex-shrink-0 w-72 md:w-80 rounded-xl justify-start text-muted-foreground border-dashed">
+                  <Plus className="h-4 w-4 mr-2" /> Add another list
+                </Button>
+              )
             )}
           </div>
 
@@ -275,7 +291,12 @@ const Board = () => {
         </DndContext>
       </div>
 
-      <TaskModal members={allMembers.filter(m => m.id !== currentUser?.id)} onDelete={handleDeleteTask} onUpdate={handleUpdateTask} />
+      <TaskModal
+        members={allMembers}
+        onDelete={handleDeleteTask}
+        onUpdate={handleUpdateTask}
+        userRole={board?.members.find((m: any) => m.userId === currentUser?.id)?.role || 'member'}
+      />
     </div>
   );
 };

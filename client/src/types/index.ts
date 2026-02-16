@@ -27,10 +27,18 @@ export interface List {
   tasks: Task[];
 }
 
+export interface BoardMember {
+  id: string;
+  boardId: string;
+  userId: string;
+  role: string;
+  user: User;
+}
+
 export interface Board {
   id: string;
   title: string;
-  members: User[];
+  members: BoardMember[];
   lists: List[];
   createdAt: string;
 }

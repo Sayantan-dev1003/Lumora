@@ -103,44 +103,121 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
     };
 };
 
-export const getBoardById = async (boardId: string) => {
-    return await prisma.board.findUnique({
-        where: { id: boardId },
-        include: {
-            members: {
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                        },
+export const getBoardById = async (boardId: string, userId: string) => {
+    // 1. Get user role
+    const member = await prisma.boardMember.findUnique({
+        where: {
+            boardId_userId: {
+                boardId,
+                userId,
+            },
+        },
+    });
+
+    if (!member) {
+        throw new Error("Unauthorized: Not a board member");
+    }
+
+    const role = member.role;
+
+    // 2. Define include logic based on role
+    // Common include for members to get user details
+    const memberInclude = {
+        members: {
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
                     },
                 },
             },
-            lists: {
-                orderBy: {
-                    position: "asc",
-                },
-                include: {
-                    tasks: {
-                        orderBy: {
-                            position: "asc"
-                        },
-                        include: {
-                            assignedUser: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    email: true
+        },
+    };
+
+    if (role === "admin") {
+        // Return FULL board for admins
+        return await prisma.board.findUnique({
+            where: { id: boardId },
+            include: {
+                ...memberInclude,
+                lists: {
+                    orderBy: {
+                        position: "asc",
+                    },
+                    include: {
+                        tasks: {
+                            orderBy: {
+                                position: "asc"
+                            },
+                            include: {
+                                assignedUser: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        email: true
+                                    }
                                 }
                             }
                         }
                     }
-                }
+                },
             },
-        },
-    });
+        });
+    } else {
+        // Return FILTERED board for members
+        // Prisma doesn't support filtering parent based on child condition easily in one go
+        // (e.g. "Lists that have tasks..."). 
+        // We can fetch lists and filter in memory, or use a complex query.
+        // Given the requirement "See only lists that contain tasks assigned to them", 
+        // we should fetch lists that contain AT LEAST one relevant task.
+
+        // Filter: Tasks where (assignedUserId === userId OR creatorId === userId)
+        const taskWhereInput = {
+            OR: [
+                { assignedUserId: userId },
+                { creatorId: userId }
+            ]
+        };
+
+        const board = await prisma.board.findUnique({
+            where: { id: boardId },
+            include: {
+                ...memberInclude,
+                lists: {
+                    orderBy: {
+                        position: "asc",
+                    },
+                    include: {
+                        tasks: {
+                            where: taskWhereInput, // Only include relevant tasks
+                            orderBy: {
+                                position: "asc"
+                            },
+                            include: {
+                                assignedUser: {
+                                    select: {
+                                        id: true,
+                                        name: true,
+                                        email: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+            },
+        });
+
+        if (!board) return null;
+
+        // Filter out empty lists (lists that have 0 tasks visible to this user)
+        // detailed requirement: "See only lists that contain tasks assigned to them"
+        board.lists = board.lists.filter(list => list.tasks.length > 0);
+
+        return board;
+    }
 };
 
 export const deleteBoard = async (boardId: string, userId: string) => {

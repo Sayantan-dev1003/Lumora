@@ -46,7 +46,7 @@ export const getBoardById = async (req: Request, res: Response, next: NextFuncti
             return errorResponse(res, "Board not found", 404);
         }
 
-        const board = await boardService.getBoardById(boardId);
+        const board = await boardService.getBoardById(boardId, userId);
         if (!board) {
             return errorResponse(res, "Board not found", 404);
         }
