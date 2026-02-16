@@ -16,7 +16,8 @@ model User {
 
   boards           Board[]       @relation("Owner")
   boardMemberships BoardMember[]
-  assignedTasks    Task[]
+  assignedTasks    Task[]        @relation("AssignedUser")
+  createdTasks     Task[]        @relation("TaskCreator")
   activities       Activity[]
 
   @@index([email])
@@ -74,7 +75,9 @@ model Task {
   updatedAt      DateTime @updatedAt
 
   list         List  @relation(fields: [listId], references: [id])
-  assignedUser User? @relation(fields: [assignedUserId], references: [id])
+  assignedUser User? @relation("AssignedUser", fields: [assignedUserId], references: [id])
+  creator      User  @relation("TaskCreator", fields: [creatorId], references: [id])
+  creatorId    String
 
   @@index([listId])
   @@index([assignedUserId])

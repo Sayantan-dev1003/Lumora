@@ -179,13 +179,16 @@ const Board = () => {
         );
 
         try {
-          await updateTask(activeId, { position: newIndex + 1 });
+          // Always send listId in case it was a move between lists (handled by DragOver)
+          await updateTask(activeId, { position: newIndex + 1, listId: overList.id });
         } catch (error) {
           toast.error('Failed to reorder task');
         }
       }
     } else {
       // Moved between lists (state already updated in handleDragOver)
+      // This block might not be reached if handleDragOver updates the state such that activeList === overList
+      // But if it IS reached (e.g. DragOver didn't run or update yet?), we keep it.
       const newIndex = overList.tasks.findIndex((t) => t.id === activeId);
       const finalPosition = (newIndex >= 0 ? newIndex : overList.tasks.length) + 1;
 
@@ -227,7 +230,7 @@ const Board = () => {
     }
   };
 
-  const handleUpdateTask = async (taskId: string, updates: { title?: string; description?: string; assigneeId?: string }) => {
+  const handleUpdateTask = async (taskId: string, updates: { title?: string; description?: string; assignedUserId?: string }) => {
     try {
       await updateTask(taskId, updates);
     } catch (error) {

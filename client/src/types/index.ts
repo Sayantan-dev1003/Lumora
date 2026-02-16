@@ -11,8 +11,10 @@ export interface Task {
   description?: string;
   listId: string;
   position: number;
-  assigneeId?: string;
-  assignee?: User;
+  assignedUserId?: string;
+  assignedUser?: User;
+  creatorId: string;
+  creator?: User;
   createdAt: string;
   updatedAt: string;
 }

@@ -22,7 +22,8 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
                 description: input.description,
                 listId: input.listId,
                 position: nextPosition,
-                assignedUserId: input.assignedUserId, // Add assignment
+                assignedUserId: input.assignedUserId,
+                creatorId: userId,
             },
         });
 

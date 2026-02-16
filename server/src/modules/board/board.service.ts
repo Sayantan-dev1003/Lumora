@@ -126,6 +126,15 @@ export const getBoardById = async (boardId: string) => {
                     tasks: {
                         orderBy: {
                             position: "asc"
+                        },
+                        include: {
+                            assignedUser: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    email: true
+                                }
+                            }
                         }
                     }
                 }

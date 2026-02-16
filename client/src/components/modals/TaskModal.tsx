@@ -17,14 +17,14 @@ import type { User } from '@/types';
 interface TaskModalProps {
   members: User[];
   onDelete: (taskId: string) => void;
-  onUpdate: (taskId: string, updates: { title?: string; description?: string; assigneeId?: string }) => void;
+  onUpdate: (taskId: string, updates: { title?: string; description?: string; assignedUserId?: string }) => void;
 }
 
 const TaskModal = ({ members, onDelete, onUpdate }: TaskModalProps) => {
   const { selectedTask, isTaskModalOpen, closeTaskModal } = useBoardStore();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [assigneeId, setAssigneeId] = useState('');
+  const [assignedUserId, setAssignedUserId] = useState('');
   const [openCombobox, setOpenCombobox] = useState(false);
   const [foundUsers, setFoundUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,21 +45,21 @@ const TaskModal = ({ members, onDelete, onUpdate }: TaskModalProps) => {
     setTimeout(() => {
       setTitle(task.title);
       setDescription(task.description || '');
-      setAssigneeId(task.assigneeId || '');
+      setAssignedUserId(task.assignedUserId || '');
     }, 0);
   }
 
   const handleClose = () => {
     // We'll keep auto-save on close as a convenience, but the Save button will be the primary action.
     if (task) {
-      onUpdate(task.id, { title, description, assigneeId: assigneeId || undefined });
+      onUpdate(task.id, { title, description, assignedUserId: assignedUserId || undefined });
     }
     closeTaskModal();
   };
 
   const handleSave = () => {
     if (task) {
-      onUpdate(task.id, { title, description, assigneeId: assigneeId || undefined });
+      onUpdate(task.id, { title, description, assignedUserId: assignedUserId || undefined });
       closeTaskModal();
     }
   };
@@ -92,7 +92,7 @@ const TaskModal = ({ members, onDelete, onUpdate }: TaskModalProps) => {
             <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
               <PopoverTrigger asChild>
                 <Button variant="outline" role="combobox" aria-expanded={openCombobox} className="w-full justify-between rounded-lg">
-                  {assigneeId ? allUsers.find((u) => u.id === assigneeId)?.name || "Unknown User" : "Unassigned"}
+                  {assignedUserId ? allUsers.find((u) => u.id === assignedUserId)?.name || "Unknown User" : "Unassigned"}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
@@ -110,8 +110,8 @@ const TaskModal = ({ members, onDelete, onUpdate }: TaskModalProps) => {
                   <CommandList>
                     <CommandEmpty>No users found.</CommandEmpty>
                     <CommandGroup heading="Suggestions">
-                      <CommandItem onSelect={() => { setAssigneeId(""); setOpenCombobox(false); }}>
-                        <Check className={cn("mr-2 h-4 w-4", assigneeId === "" ? "opacity-100" : "opacity-0")} />
+                      <CommandItem onSelect={() => { setAssignedUserId(""); setOpenCombobox(false); }}>
+                        <Check className={cn("mr-2 h-4 w-4", assignedUserId === "" ? "opacity-100" : "opacity-0")} />
                         Unassigned
                       </CommandItem>
                       {allUsers.map((user) => (
@@ -119,11 +119,11 @@ const TaskModal = ({ members, onDelete, onUpdate }: TaskModalProps) => {
                           key={user.id}
                           value={user.name}
                           onSelect={() => {
-                            setAssigneeId(user.id);
+                            setAssignedUserId(user.id);
                             setOpenCombobox(false);
                           }}
                         >
-                          <Check className={cn("mr-2 h-4 w-4", assigneeId === user.id ? "opacity-100" : "opacity-0")} />
+                          <Check className={cn("mr-2 h-4 w-4", assignedUserId === user.id ? "opacity-100" : "opacity-0")} />
                           <div className="flex flex-col">
                             <span>{user.name}</span>
                             <span className="text-xs text-muted-foreground">{user.email}</span>
