@@ -11,25 +11,25 @@ import taskRoutes from "./modules/task/task.routes";
 import activityRoutes from "./modules/activity/activity.routes";
 import { globalLimiter } from "./middlewares/rateLimit.middleware";
 import { sanitizeInput } from "./middlewares/sanitize.middleware";
+import { CLIENT_URL } from "./config/env";
 
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173", // Frontend URL
+  origin: CLIENT_URL,
   credentials: true,
 }));
 app.use(helmet());
 app.use(morgan("dev"));
-// Apply global rate limiter only in non-test environments
 if (process.env.NODE_ENV !== "test") {
   app.use(globalLimiter);
 }
 app.use(express.json({ limit: "10kb" }));
-app.use(sanitizeInput); // Sanitize inputs after parsing body
+app.use(sanitizeInput);
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
-app.use("/api/boards", activityRoutes); // Mount activity routes first to prioritize /:id/activity
+app.use("/api/boards", activityRoutes);
 app.use("/api/boards", boardRoutes);
 app.use("/api/lists", listRoutes);
 app.use("/api/tasks", taskRoutes);

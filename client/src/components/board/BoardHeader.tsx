@@ -25,7 +25,7 @@ const BoardHeader = ({ title, members }: BoardHeaderProps) => {
         {members.slice(0, 4).map((m) => (
           <Avatar key={m.id} className="h-8 w-8 border-2 border-background">
             <AvatarFallback className="text-xs bg-accent text-accent-foreground">
-              {m.name.charAt(0)}
+              {m.name?.charAt(0) || 'U'}
             </AvatarFallback>
           </Avatar>
         ))}

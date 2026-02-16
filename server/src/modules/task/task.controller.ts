@@ -8,7 +8,7 @@ import { successResponse, errorResponse } from "../../utils/response.helper";
 export const createTask = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.userId!;
-        const { title, listId, description } = req.body as CreateTaskInput;
+        const { title, listId, description, assignedUserId } = req.body as CreateTaskInput;
 
         // Verify list exists and get boardId
         const list = await listService.getListById(listId);
@@ -22,7 +22,7 @@ export const createTask = async (req: Request, res: Response, next: NextFunction
             return errorResponse(res, "List not found", 404);
         }
 
-        const task = await taskService.createTask(userId, { title, listId, description });
+        const task = await taskService.createTask(userId, { title, listId, description, assignedUserId });
 
         return successResponse(res, task, "Task created successfully", undefined, 201);
     } catch (error) {
@@ -58,14 +58,6 @@ export const updateTask = async (req: Request, res: Response, next: NextFunction
                 if (!isTargetMember) {
                     return errorResponse(res, "Access denied to target board", 403);
                 }
-            }
-        }
-
-        // If assigning user, verify assignee is board member
-        if (input.assignedUserId) {
-            const isAssigneeMember = await boardService.isBoardMember(input.assignedUserId, (task as any).list.boardId);
-            if (!isAssigneeMember) {
-                return errorResponse(res, "Assigned user is not a member of this board", 400);
             }
         }
 

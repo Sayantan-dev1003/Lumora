@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const SOCKET_URL = VITE_API_URL.replace(/\/api$/, '');
 
 let socket: Socket | null = null;
 
@@ -38,14 +39,14 @@ export const leaveBoard = (boardId: string) => {
 };
 
 // Event Listeners
-export const onTaskCreated = (cb: (task: any) => void) => socket?.on('task_created', cb);
-export const onTaskUpdated = (cb: (task: any) => void) => socket?.on('task_updated', cb);
-export const onTaskDeleted = (cb: (data: { taskId: string }) => void) => socket?.on('task_deleted', cb);
+export const onTaskCreated = (cb: (task: any) => void) => connectSocket().on('task_created', cb);
+export const onTaskUpdated = (cb: (task: any) => void) => connectSocket().on('task_updated', cb);
+export const onTaskDeleted = (cb: (data: { taskId: string }) => void) => connectSocket().on('task_deleted', cb);
 
-export const onListCreated = (cb: (list: any) => void) => socket?.on('list_created', cb);
-export const onListUpdated = (cb: (list: any) => void) => socket?.on('list_updated', cb);
-export const onListDeleted = (cb: (data: { listId: string }) => void) => socket?.on('list_deleted', cb);
+export const onListCreated = (cb: (list: any) => void) => connectSocket().on('list_created', cb);
+export const onListUpdated = (cb: (list: any) => void) => connectSocket().on('list_updated', cb);
+export const onListDeleted = (cb: (data: { listId: string }) => void) => connectSocket().on('list_deleted', cb);
 
-export const onActivityCreated = (cb: (activity: any) => void) => socket?.on('activity_created', cb);
+export const onActivityCreated = (cb: (activity: any) => void) => connectSocket().on('activity_created', cb);
 
 export const getSocket = () => socket;

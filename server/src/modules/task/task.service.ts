@@ -4,6 +4,7 @@ import { CreateTaskInput, UpdateTaskInput } from "./task.types";
 
 import { logActivity } from "../activity/activity.service";
 import { getIO } from "../../socket/socket";
+import { addBoardMember, isBoardMember } from "../board/board.service";
 
 export const createTask = async (userId: string, input: CreateTaskInput) => {
     const result = await prisma.$transaction(async (tx) => {
@@ -21,34 +22,71 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
                 description: input.description,
                 listId: input.listId,
                 position: nextPosition,
+                assignedUserId: input.assignedUserId, // Add assignment
             },
         });
 
-        // Log activity (task_created)
-        // Need boardId. List has boardId. But we only have listId.
-        // We can fetch list to get boardId, OR relying on controller to pass it?
-        // Service should be self-contained or minimal.
-        // Fetching list inside transaction is safe.
+        // Get boardId
         const list = await tx.list.findUnique({
             where: { id: input.listId },
             select: { boardId: true }
         });
 
-        if (list) {
+        const boardId = list?.boardId;
+
+        if (boardId) {
+            // Log activity (task_created)
             await logActivity({
-                boardId: list.boardId,
+                boardId,
                 userId,
                 actionType: "task_created",
                 entityType: "task",
                 entityId: task.id
             }, tx);
+
+            // Handle Auto-Membership for Assignee
+            if (input.assignedUserId) {
+                const existingMember = await tx.boardMember.findUnique({
+                    where: {
+                        boardId_userId: {
+                            boardId,
+                            userId: input.assignedUserId
+                        }
+                    }
+                });
+
+                if (!existingMember) {
+                    await tx.boardMember.create({
+                        data: {
+                            boardId,
+                            userId: input.assignedUserId,
+                            role: "member"
+                        }
+                    });
+                    // New member added
+                }
+
+                // Log activity (task_assigned)
+                await logActivity({
+                    boardId,
+                    userId,
+                    actionType: "task_assigned",
+                    entityType: "task",
+                    entityId: task.id
+                }, tx);
+            }
         }
 
-        return { task, boardId: list?.boardId };
+        return { task, boardId, assignedUserId: input.assignedUserId };
     });
 
     if (result.boardId) {
         getIO().to(result.boardId).emit("task_created", result.task);
+
+        if (result.assignedUserId) {
+            // Notify the assigned user so they see the board
+            getIO().to(result.assignedUserId).emit("board_created", { boardId: result.boardId });
+        }
     }
 
     return result.task;
@@ -147,9 +185,55 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
             }
         }
 
-        // Handle assignment change logging
-        if (input.assignedUserId && input.assignedUserId !== existingTask.assignedUserId) {
-            // TODO: Log activity (task_assigned)
+        // Get Board ID for assignment logic
+        const targetListId = input.listId || existingTask.listId;
+        const list = await tx.list.findUnique({ where: { id: targetListId }, select: { boardId: true } });
+        const boardId = list?.boardId;
+
+        // Handle assignment change logging & Auto-Membership
+        let newMemberAdded = false;
+
+        if (input.assignedUserId !== undefined && input.assignedUserId !== existingTask.assignedUserId) {
+
+            if (input.assignedUserId && boardId) {
+                // Check membership
+                const existingMember = await tx.boardMember.findUnique({
+                    where: {
+                        boardId_userId: {
+                            boardId,
+                            userId: input.assignedUserId
+                        }
+                    }
+                });
+
+                if (!existingMember) {
+                    await tx.boardMember.create({
+                        data: {
+                            boardId,
+                            userId: input.assignedUserId,
+                            role: "member"
+                        }
+                    });
+                    newMemberAdded = true;
+                }
+
+                await logActivity({
+                    boardId: boardId,
+                    userId,
+                    actionType: "task_assigned",
+                    entityType: "task",
+                    entityId: taskId
+                }, tx);
+            } else if (input.assignedUserId === null && boardId) {
+                // Unassigned
+                await logActivity({
+                    boardId: boardId,
+                    userId,
+                    actionType: "task_unassigned",
+                    entityType: "task",
+                    entityId: taskId
+                }, tx);
+            }
         }
 
 
@@ -164,15 +248,15 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
             },
         });
 
-        // TODO: Log activity (task_updated) - generic update if not moved/assigned?
-
-        const boardId = updatedTask.listId ? (await tx.list.findUnique({ where: { id: updatedTask.listId }, select: { boardId: true } }))?.boardId : undefined;
-
-        return { updatedTask, boardId };
+        return { updatedTask, boardId, newMemberAdded, newAssignedUserId: input.assignedUserId };
     });
 
     if (result.boardId) {
         getIO().to(result.boardId).emit("task_updated", result.updatedTask);
+
+        if (result.newMemberAdded && result.newAssignedUserId) {
+            getIO().to(result.newAssignedUserId).emit("board_created", { boardId: result.boardId });
+        }
     }
 
     return result.updatedTask;

@@ -73,3 +73,27 @@ export const getMe = async (req: Request, res: Response, next: NextFunction) => 
         next(error);
     }
 };
+
+export const searchUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.userId!;
+        const query = req.query.q as string;
+
+        if (!query) {
+            res.status(400).json({
+                success: false,
+                message: 'Query parameter is required',
+            });
+            return;
+        }
+
+        const users = await authService.searchUsers(query, userId);
+
+        res.status(200).json({
+            success: true,
+            users,
+        });
+    } catch (error) {
+        next(error);
+    }
+};

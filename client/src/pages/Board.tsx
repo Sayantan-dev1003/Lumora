@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { fetchBoard } from '@/services/api';
+import { fetchBoard, createList, createTask, updateTask, deleteTask } from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
 import { joinBoard, leaveBoard, onTaskCreated, onTaskUpdated, onTaskDeleted, onListCreated, onListUpdated, onListDeleted, onActivityCreated, getSocket } from '@/services/socket';
 import { toast } from 'sonner';
 import BoardHeader from '@/components/board/BoardHeader';
@@ -27,6 +28,9 @@ const Board = () => {
     queryFn: () => fetchBoard(boardId!),
     enabled: !!boardId,
   });
+
+  const currentUser = useAuthStore((s) => s.user);
+  const allMembers = board?.members.map((m: any) => m.user) || [];
 
   useEffect(() => {
     if (board) setLists(board.lists);
@@ -149,54 +153,86 @@ const Board = () => {
     });
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
-    if (!over || active.id === over.id) return;
 
     const activeId = active.id as string;
-    const overId = over.id as string;
+    const overId = over?.id as string;
 
-    setLists((prev) =>
-      prev.map((list) => {
-        const oldIdx = list.tasks.findIndex((t) => t.id === activeId);
-        const newIdx = list.tasks.findIndex((t) => t.id === overId);
-        if (oldIdx >= 0 && newIdx >= 0) {
-          return { ...list, tasks: arrayMove(list.tasks, oldIdx, newIdx) };
+    if (!overId) return;
+
+    const activeList = lists.find((l) => l.tasks.some((t) => t.id === activeId));
+    const overList = lists.find((l) => l.id === overId || l.tasks.some((t) => t.id === overId));
+
+    if (!activeList || !overList) return;
+
+    if (activeList.id === overList.id) {
+      const oldIndex = activeList.tasks.findIndex((t) => t.id === activeId);
+      const newIndex = overList.tasks.findIndex((t) => t.id === overId);
+
+      if (oldIndex !== newIndex && oldIndex !== -1 && newIndex !== -1) {
+        setLists((prev) =>
+          prev.map((l) =>
+            l.id === activeList.id ? { ...l, tasks: arrayMove(l.tasks, oldIndex, newIndex) } : l
+          )
+        );
+
+        try {
+          await updateTask(activeId, { position: newIndex + 1 });
+        } catch (error) {
+          toast.error('Failed to reorder task');
         }
-        return list;
-      })
-    );
-    // API call placeholder: updateTaskPosition(activeId, newListId, newPosition)
+      }
+    } else {
+      // Moved between lists (state already updated in handleDragOver)
+      const newIndex = overList.tasks.findIndex((t) => t.id === activeId);
+      const finalPosition = (newIndex >= 0 ? newIndex : overList.tasks.length) + 1;
+
+      try {
+        await updateTask(activeId, {
+          listId: overList.id,
+          position: finalPosition,
+        });
+      } catch (error) {
+        toast.error('Failed to move task');
+      }
+    }
   };
 
-  const handleAddTask = useCallback((listId: string, title: string) => {
-    const newTask: Task = {
-      id: `task-${Date.now()}`, title, listId, position: 0,
-      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    };
-    setLists((prev) => prev.map((l) => l.id === listId ? { ...l, tasks: [...l.tasks, newTask] } : l));
+  const handleAddTask = useCallback(async (listId: string, title: string) => {
+    try {
+      await createTask(listId, title);
+    } catch (error) {
+      toast.error("Failed to create task");
+    }
   }, []);
 
-  const handleAddList = () => {
+  const handleAddList = async () => {
     if (!newListTitle.trim() || !boardId) return;
-    const newList: List = { id: `list-${Date.now()}`, title: newListTitle.trim(), boardId, position: lists.length, tasks: [] };
-    setLists((prev) => [...prev, newList]);
-    setNewListTitle('');
-    setAddingList(false);
+    try {
+      await createList(boardId, newListTitle.trim());
+      setNewListTitle('');
+      setAddingList(false);
+    } catch (error) {
+      toast.error("Failed to create list");
+    }
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setLists((prev) => prev.map((l) => ({ ...l, tasks: l.tasks.filter((t) => t.id !== taskId) })));
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await deleteTask(taskId);
+    } catch (error) {
+      toast.error("Failed to delete task");
+    }
   };
 
-  const handleUpdateTask = (taskId: string, updates: { title?: string; description?: string; assigneeId?: string }) => {
-    setLists((prev) =>
-      prev.map((l) => ({
-        ...l,
-        tasks: l.tasks.map((t) => (t.id === taskId ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t)),
-      }))
-    );
+  const handleUpdateTask = async (taskId: string, updates: { title?: string; description?: string; assigneeId?: string }) => {
+    try {
+      await updateTask(taskId, updates);
+    } catch (error) {
+      toast.error("Failed to update task");
+    }
   };
 
   if (isLoading) {
@@ -209,7 +245,7 @@ const Board = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <BoardHeader title={board?.title || 'Board'} members={board?.members || []} />
+      <BoardHeader title={board?.title || 'Board'} members={allMembers} />
 
       <div className="flex-1 overflow-x-auto p-4 md:p-6">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
@@ -251,7 +287,7 @@ const Board = () => {
         </DndContext>
       </div>
 
-      <TaskModal members={board?.members || []} onDelete={handleDeleteTask} onUpdate={handleUpdateTask} />
+      <TaskModal members={allMembers.filter(m => m.id !== currentUser?.id)} onDelete={handleDeleteTask} onUpdate={handleUpdateTask} />
     </div>
   );
 };

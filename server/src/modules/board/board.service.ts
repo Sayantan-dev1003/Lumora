@@ -49,11 +49,26 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
     const skip = (page - 1) * limit;
 
     const where = {
-        members: {
-            some: {
-                userId,
+        OR: [
+            {
+                members: {
+                    some: {
+                        userId,
+                    },
+                },
             },
-        },
+            {
+                lists: {
+                    some: {
+                        tasks: {
+                            some: {
+                                assignedUserId: userId
+                            }
+                        }
+                    }
+                }
+            }
+        ]
     };
 
     const [boards, total] = await Promise.all([
@@ -174,4 +189,26 @@ export const isBoardAdmin = async (userId: string, boardId: string): Promise<boo
         },
     });
     return member?.role === "admin";
+};
+
+export const addBoardMember = async (boardId: string, userId: string, role: string = 'member') => {
+    // Check if already a member to avoid unique constraint errors if purely relying on create
+    const existing = await prisma.boardMember.findUnique({
+        where: {
+            boardId_userId: {
+                boardId,
+                userId,
+            },
+        },
+    });
+
+    if (existing) return existing;
+
+    return await prisma.boardMember.create({
+        data: {
+            boardId,
+            userId,
+            role,
+        },
+    });
 };

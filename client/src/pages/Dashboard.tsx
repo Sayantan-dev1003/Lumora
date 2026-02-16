@@ -19,10 +19,12 @@ const Dashboard = () => {
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
-  const { data: boards = [], isLoading } = useQuery({
+  const { data: boardsData, isLoading } = useQuery({
     queryKey: ['boards'],
-    queryFn: fetchBoards,
+    queryFn: () => fetchBoards(),
   });
+
+  const boards = boardsData?.boards || [];
 
   const createMutation = useMutation({
     mutationFn: (title: string) => createBoard(title),

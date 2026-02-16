@@ -38,25 +38,37 @@ export const logoutApi = async (): Promise<void> => {
   await api.post('/auth/logout');
 };
 
+
 export const fetchMeApi = async (): Promise<{ user: User }> => {
   const { data } = await api.get('/auth/me');
   return data;
 };
 
+export const searchUsersApi = async (query: string): Promise<User[]> => {
+  const { data } = await api.get(`/auth/users?q=${query}`);
+  return data.users;
+};
+
+
 // --- Boards ---
 export const fetchBoards = async (page = 1, limit = 10): Promise<{ boards: BoardSummary[], total: number }> => {
-  const { data } = await api.get(`/boards?page=${page}&limit=${limit}`);
-  return data;
+  const p = typeof page === 'number' ? page : 1;
+  const l = typeof limit === 'number' ? limit : 10;
+  const { data } = await api.get(`/boards?page=${p}&limit=${l}`);
+  return {
+    boards: data.data,
+    total: data.pagination?.total || 0,
+  };
 };
 
 export const fetchBoard = async (boardId: string): Promise<Board> => {
   const { data } = await api.get(`/boards/${boardId}`);
-  return data;
+  return data.data;
 };
 
 export const createBoard = async (title: string): Promise<BoardSummary> => {
   const { data } = await api.post('/boards', { title });
-  return data;
+  return data.data;
 };
 
 export const deleteBoard = async (boardId: string): Promise<void> => {
@@ -66,12 +78,12 @@ export const deleteBoard = async (boardId: string): Promise<void> => {
 // --- Tasks ---
 export const createTask = async (listId: string, title: string): Promise<Task> => {
   const { data } = await api.post('/tasks', { listId, title });
-  return data;
+  return data.data;
 };
 
 export const updateTask = async (taskId: string, updates: Partial<Task>): Promise<Task> => {
   const { data } = await api.patch(`/tasks/${taskId}`, updates);
-  return data;
+  return data.data;
 };
 
 export const deleteTask = async (taskId: string): Promise<void> => {
@@ -80,18 +92,18 @@ export const deleteTask = async (taskId: string): Promise<void> => {
 
 export const searchTasks = async (query: string): Promise<Task[]> => {
   const { data } = await api.get(`/tasks?search=${query}`);
-  return data;
+  return data.data;
 };
 
 // --- Lists ---
 export const createList = async (boardId: string, title: string) => {
   const { data } = await api.post('/lists', { boardId, title });
-  return data;
+  return data.data;
 };
 
 export const updateList = async (listId: string, updates: any) => {
   const { data } = await api.patch(`/lists/${listId}`, updates);
-  return data;
+  return data.data;
 };
 
 export const deleteList = async (listId: string) => {

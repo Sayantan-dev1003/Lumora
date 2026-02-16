@@ -14,3 +14,4 @@ export const PORT = getEnv("PORT", "5000");
 export const NODE_ENV = getEnv("NODE_ENV", "development");
 export const JWT_SECRET = getEnv("JWT_SECRET");
 export const DATABASE_URL = getEnv("DATABASE_URL");
+export const CLIENT_URL = getEnv("CLIENT_URL");

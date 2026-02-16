@@ -78,3 +78,23 @@ export const getUserById = async (userId: string) => {
 
     return user;
 };
+
+export const searchUsers = async (query: string, userId: string) => {
+    return await prisma.user.findMany({
+        where: {
+            OR: [
+                { name: { contains: query, mode: 'insensitive' } },
+                { email: { contains: query, mode: 'insensitive' } },
+            ],
+            NOT: {
+                id: userId,
+            },
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+        },
+        take: 10,
+    });
+};

@@ -4,6 +4,7 @@ export interface CreateTaskInput {
     title: string;
     description?: string;
     listId: string;
+    assignedUserId?: string;
 }
 
 export interface UpdateTaskInput {

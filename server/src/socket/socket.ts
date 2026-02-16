@@ -2,13 +2,14 @@ import { Server, Socket } from 'socket.io';
 import http from 'http';
 import { verifyToken } from '../utils/jwt';
 import prisma from '../config/db';
+import { CLIENT_URL } from '../config/env';
 
 let io: Server;
 
 export const initSocket = (httpServer: http.Server) => {
   io = new Server(httpServer, {
     cors: {
-      origin: 'http://localhost:5173', // Adjust based on frontend port
+      origin: CLIENT_URL, // Use configurable client URL
       credentials: true,
     },
   });
