@@ -1,131 +1,195 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchBoards, createBoard } from '@/services/api';
+import { fetchBoards, createBoard, fetchDashboardStats } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Plus, Search, LogOut, LayoutDashboard, Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Plus, Search, LayoutDashboard, Users, CheckCircle2, Circle, Clock, AlertCircle, ChevronLeft, ChevronRight, ListTodo } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import BoardCard from '@/components/BoardCard';
 
 const Dashboard = () => {
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [page, setPage] = useState(1);
   const navigate = useNavigate();
-  const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
-  const { data: boardsData, isLoading } = useQuery({
-    queryKey: ['boards'],
-    queryFn: () => fetchBoards(),
+  const { data: boardsData, isLoading: boardsLoading } = useQuery({
+    queryKey: ['boards', page],
+    queryFn: () => fetchBoards(page, 6),
+  });
+
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: () => fetchDashboardStats(),
   });
 
   const boards = boardsData?.boards || [];
+  const pagination = boardsData?.total ? {
+    page: page,
+    totalPages: Math.ceil(boardsData.total / 6)
+  } : { page: 1, totalPages: 1 };
+
+  const stats = statsData?.stats;
+  const recentActivity = statsData?.recentActivity || [];
 
   const createMutation = useMutation({
     mutationFn: (title: string) => createBoard(title),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['boards'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       setCreateOpen(false);
       setNewTitle('');
     },
   });
 
-  const filtered = boards.filter((b) => b.title.toLowerCase().includes(search.toLowerCase()));
+  const filtered = boards.filter((b: any) => b.title?.toLowerCase().includes(search.toLowerCase()));
+
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-border bg-sidebar p-4 gap-4">
-        <div className="flex items-center">
-          <img src="/logo.png" alt="Lumora" className="h-16" />
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 pb-6 border-b border-border/40">
+        <div className="space-y-1">
+          <h1 className="text-3xl md:text-4xl font-bold font-heading bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Welcome back, {user?.name?.split(' ')[0] || 'User'}
+          </h1>
+          <p className="text-muted-foreground">Here's what's happening in your projects.</p>
         </div>
-        <nav className="flex-1 space-y-1">
-          <button className="flex items-center gap-2 w-full rounded-xl px-3 py-2 text-sm font-medium bg-sidebar-accent text-sidebar-accent-foreground">
-            <LayoutDashboard className="h-4 w-4" /> Boards
-          </button>
-          <button className="flex items-center gap-2 w-full rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-sidebar-accent/50 transition-colors">
-            <Users className="h-4 w-4" /> Members
-          </button>
-        </nav>
-        <div className="border-t border-border pt-4">
-          <div className="flex items-center gap-2 px-2">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="text-xs bg-accent text-accent-foreground">
-                {user?.name?.charAt(0) || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={logout} className="shrink-0">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 p-6 md:p-8 max-w-6xl">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <h1 className="text-3xl font-bold">Your Boards</h1>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search boards..." className="pl-9 rounded-xl" value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-            <Button onClick={() => setCreateOpen(true)} className="rounded-xl gap-1">
-              <Plus className="h-4 w-4" /> New Board
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile logout */}
-        <div className="md:hidden mb-4 flex justify-end">
-          <Button variant="ghost" size="sm" onClick={logout} className="gap-1">
-            <LogOut className="h-4 w-4" /> Logout
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <Button onClick={() => setCreateOpen(true)} className="rounded-xl gap-2 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5" size="lg">
+            <Plus className="h-5 w-5" /> New Board
           </Button>
         </div>
+      </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="h-32 animate-pulse bg-muted rounded-xl" />
-            ))}
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard title="Total Boards" value={stats?.totalBoards ?? '-'} icon={LayoutDashboard} />
+        <StatsCard title="Total Tasks" value={stats?.totalTasks ?? '-'} icon={ListTodo} />
+        <StatsCard title="Tasks Assigned to Me" value={stats?.assignedToMe ?? '-'} icon={Users} className="text-blue-500" />
+        <StatsCard title="Active Tasks" value={stats?.activeTasks ?? '-'} icon={Clock} className="text-orange-500" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Boards List */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Your Boards</h2>
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search boards..."
+                className="pl-9 h-9 text-sm rounded-lg"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <LayoutDashboard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-1">No boards found</h3>
-            <p className="text-muted-foreground text-sm">Create a new board to get started</p>
+
+          {boardsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-40 animate-pulse bg-muted/40 rounded-2xl border border-border/40" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16 border-2 border-dashed border-border/50 rounded-3xl bg-muted/20">
+              <div className="bg-background p-3 rounded-full inline-flex mb-3 shadow-sm">
+                <LayoutDashboard className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium mb-1">No boards found</h3>
+              <Button onClick={() => setCreateOpen(true)} variant="link" className="text-primary">
+                Create a new board
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filtered.map((board: any) => (
+                  <BoardCard key={board.id} board={board} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-end gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg"
+                    disabled={page <= 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page} of {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg"
+                    disabled={page >= pagination.totalPages}
+                    onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Recent Activity</h2>
+            <Button variant="link" className="text-sm text-primary p-0 h-auto" onClick={() => navigate('/activity')}>
+              View All
+            </Button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((board) => (
-              <Card
-                key={board.id}
-                className="cursor-pointer rounded-xl hover:shadow-md transition-shadow border-border/50 hover:border-accent"
-                onClick={() => navigate(`/board/${board.id}`)}
-              >
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{board.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Users className="h-3.5 w-3.5" />
-                    <span>{board.memberCount} members</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
+          <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-0">
+              {recentActivity.length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">No recent activity</div>
+              ) : (
+                <div className="divide-y divide-border/40">
+                  {recentActivity.map((activity: any) => (
+                    <div key={activity.id} className="p-4 hover:bg-muted/30 transition-colors">
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <p className="text-sm font-medium">{activity.user.name}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {activity.actionType.replace(/_/g, ' ').toLowerCase()} <span className="font-medium text-foreground">{activity.entityType.toLowerCase()}</span>
+                          </p>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                          {formatDistanceToNow(new Date(activity.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+
+                      <div className="mt-2.5 inline-block">
+                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 truncate max-w-[150px] inline-block">
+                          {activity.board?.title}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Removed "View All Activity" button as request implies focusing on these 3, or we can keep it if needed. Leaving it out for now to cleaner look, or verify if requested? Request said "only show latest 3". It didn't strictly say remove 'view all'. But typically 'only show X' implies limiting the view. I'll leave the button if user wants to see history. Actually, let's keep it but maybe visually de-emphasize or remove if 3 is all they want to see here. I'll remove it to strictly follow "only show latest 3". */}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Create Board Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -151,5 +215,19 @@ const Dashboard = () => {
     </div>
   );
 };
+
+const StatsCard = ({ title, value, icon: Icon, className }: any) => (
+  <Card className="border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden relative">
+    <CardContent className="p-5 flex items-start justify-between">
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
+        <div className="text-2xl font-bold tracking-tight">{value}</div>
+      </div>
+      <div className={`p-2.5 rounded-xl bg-background/50 border border-border/50 ${className || 'text-primary'}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+    </CardContent>
+  </Card>
+);
 
 export default Dashboard;

@@ -23,7 +23,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
     <Card
       ref={setNodeRef}
       style={style}
-      className="p-3 rounded-lg cursor-pointer bg-background hover:shadow-md transition-shadow border-border/40 group"
+      className="p-3 rounded-xl cursor-pointer bg-card hover:shadow-float hover:-translate-y-0.5 transition-all duration-300 border-border/30 group"
       onClick={() => openTaskModal(task)}
     >
       <div className="flex items-start gap-2">

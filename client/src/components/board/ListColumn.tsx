@@ -28,7 +28,7 @@ const ListColumn = ({ list, onAddTask }: ListColumnProps) => {
 
   return (
     <div className="flex-shrink-0 w-72 md:w-80">
-      <div className="bg-muted/60 rounded-xl p-3 flex flex-col max-h-[calc(100vh-10rem)]">
+      <div className="bg-muted/50 hover:bg-muted/60 transition-colors rounded-2xl p-3 flex flex-col max-h-[calc(100vh-10rem)] border border-border/20 shadow-sm">
         <div className="flex items-center justify-between mb-3 px-1">
           <h3 className="font-semibold text-sm text-foreground">{list.title}</h3>
           <span className="text-xs text-muted-foreground bg-background/80 px-2 py-0.5 rounded-full">

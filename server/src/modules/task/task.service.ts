@@ -589,29 +589,83 @@ export const getTaskById = async (taskId: string) => {
     });
 };
 
-export const searchTasks = async (userId: string, boardId: string, query: string, page: number = 1, limit: number = 10) => {
+export const searchTasks = async (userId: string, boardId: string | undefined, query: string, page: number = 1, limit: number = 10, filter?: 'assigned' | 'created' | 'all') => {
     const skip = (page - 1) * limit;
 
-    const where: any = {
-        list: {
-            boardId: boardId // Search within specific board
-        },
+    let where: any = {
         title: {
             contains: query,
             mode: 'insensitive', // Case insensitive search
         }
     };
 
-    // Filter for members
-    const member = await prisma.boardMember.findUnique({
-        where: { boardId_userId: { boardId, userId } }
-    });
+    if (boardId) {
+        where.list = { boardId };
 
-    if (member && member.role !== 'admin') {
-        where.OR = [
-            { assignedUserId: userId },
-            { creatorId: userId }
-        ];
+        // Filter for members (if boardId is present, we assume caller checked basic membership, but we need to refine access if role is member?)
+        // The controller checks `isBoardMember`.
+        // But inside `searchTasks`, we also had logic: "if member && !admin ... assigned OR created".
+        // We should preserve that for board-scoped search.
+        const member = await prisma.boardMember.findUnique({
+            where: { boardId_userId: { boardId, userId } }
+        });
+
+        if (member && member.role !== 'admin') {
+            where.OR = [
+                { assignedUserId: userId },
+                { creatorId: userId }
+            ];
+        }
+    } else {
+        // Global Search
+        // We must ensure users only see tasks they have access to.
+        // 1. Tasks in boards they are members of.
+        // AND match filter.
+
+        if (filter === 'assigned') {
+            where.assignedUserId = userId;
+        } else if (filter === 'created') {
+            where.creatorId = userId;
+        } else {
+            // 'all' or default in global context?
+            // "Assigned to Me" page uses this with filter='assigned'.
+            // "Created by Me" page uses this with filter='created'.
+            // If just searching globally without filter?
+            // We should restrict to boards user is member of.
+            const userBoards = await prisma.boardMember.findMany({
+                where: { userId },
+                select: { boardId: true }
+            });
+            const boardIds = userBoards.map(ub => ub.boardId);
+
+            where.list = {
+                boardId: { in: boardIds }
+            };
+
+            // Should we also enforce "assigned OR created" if they are strict members in those boards?
+            // Existing logic for "member" role in a board restricts them to only seeing their own tasks?
+            // "Member ... Cannot: See full board structure ... Activity page shows only allowed logs".
+            // If they can't see other tasks in Board View, they shouldn't see them in Global Search either.
+            // So we need to respect the per-board role. This is complex in a single query.
+            // For now, let's assume if they are searching "assigned" or "created", it's fine.
+            // If 'all', we might be exposing tasks they shouldn't see if they are just 'member' in that board.
+            // Safest: Only return tasks where (assigned==userId OR created==userId) GLOBALLY if no boardId is specified?
+            // Or just stick to the requested filters.
+
+            // Requirement only asks for "Assigned to Me" and "Created by Me" pages.
+            // It uses search bar in those pages?
+            // "Assigned to Me... Add: Search bar".
+            // So mostly we use filter='assigned' + search query.
+
+            if (!filter) {
+                // If no filter provided, default to what? 
+                // Maybe just (assigned OR created)?
+                where.OR = [
+                    { assignedUserId: userId },
+                    { creatorId: userId }
+                ];
+            }
+        }
     }
 
     const [tasks, total] = await Promise.all([

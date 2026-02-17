@@ -9,7 +9,9 @@ export const createBoardSchema = z.object({
 });
 
 export const getBoardsSchema = z.object({
-    query: paginationSchema,
+    query: paginationSchema.extend({
+        type: z.enum(['created', 'member', 'all']).optional(),
+    }),
 });
 
 export const updateBoardSchema = z.object({

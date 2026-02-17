@@ -64,3 +64,47 @@ export const getBoardActivity = async (boardId: string, page: number = 1, limit:
         },
     };
 };
+
+export const getAllActivity = async (userId: string, page: number = 1, limit: number = 20) => {
+    const skip = (page - 1) * limit;
+
+    const whereClause: Prisma.ActivityWhereInput = {
+        userId: userId
+    };
+
+    const [activities, total] = await Promise.all([
+        prisma.activity.findMany({
+            where: whereClause,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+                board: {
+                    select: {
+                        title: true
+                    }
+                }
+            },
+        }),
+        prisma.activity.count({
+            where: whereClause
+        }),
+    ]);
+
+    return {
+        activities,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+        },
+    };
+};

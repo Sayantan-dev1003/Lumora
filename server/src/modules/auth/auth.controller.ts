@@ -97,3 +97,30 @@ export const searchUsers = async (req: Request, res: Response, next: NextFunctio
         next(error);
     }
 };
+
+export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.userId!;
+        const updatedUser = await authService.updateProfile(userId, req.body);
+        res.status(200).json({
+            success: true,
+            user: updatedUser,
+            message: "Profile updated successfully"
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.userId!;
+        await authService.changePassword(userId, req.body);
+        res.status(200).json({
+            success: true,
+            message: "Password changed successfully"
+        });
+    } catch (error) {
+        next(error);
+    }
+};

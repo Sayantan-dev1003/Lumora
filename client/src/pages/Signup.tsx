@@ -34,42 +34,51 @@ const Signup = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md shadow-lg border-border/50">
-        <CardHeader className="text-center">
-          <div className="flex justify-center">
-            <img src="/logo.png" alt="Lumora" className="h-32" />
-          </div>
-          <CardTitle className="text-3xl">Create account</CardTitle>
-          <CardDescription>Get started with your workspace</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-lg">{error}</p>}
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="Jane Doe" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-          </CardContent>
-          <CardFooter className="flex-col gap-3">
-            <Button type="submit" className="w-full rounded-xl" disabled={loading}>
-              {loading ? 'Creating account...' : 'Create Account'}
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
-              <Link to="/login" className="text-accent-foreground font-medium hover:underline">Sign in</Link>
+    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
+      <div className="flex items-center justify-center py-12">
+        <div className="mx-auto grid w-[350px] gap-6">
+          <div className="grid gap-2 text-center">
+            <h1 className="text-3xl font-bold font-heading">Create account</h1>
+            <p className="text-balance text-muted-foreground">
+              Enter your information to create an account
             </p>
-          </CardFooter>
-        </form>
-      </Card>
+          </div>
+          <Card className="border-0 shadow-none sm:border sm:shadow-lg">
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-4 pt-6">
+                {error && <p className="text-sm text-destructive bg-destructive/10 p-2 rounded-lg">{error}</p>}
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input id="name" placeholder="Jane Doe" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? 'Creating account...' : 'Create Account'}
+                </Button>
+              </CardContent>
+            </form>
+          </Card>
+          <div className="mt-4 text-center text-sm">
+            Already have an account?{" "}
+            <Link to="/login" className="underline text-primary">
+              Sign in
+            </Link>
+          </div>
+        </div>
+      </div>
+      <div className="hidden bg-muted lg:block relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-background/20" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <img src="/logo.png" alt="Lumora" className="h-[400px] object-contain drop-shadow-2xl animate-fade-in" />
+        </div>
+      </div>
     </div>
   );
 };

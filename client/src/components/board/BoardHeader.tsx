@@ -13,7 +13,7 @@ const BoardHeader = ({ title, members }: BoardHeaderProps) => {
   const navigate = useNavigate();
 
   return (
-    <header className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-10">
+    <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-10 transition-all duration-300">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="rounded-xl">
           <ArrowLeft className="h-4 w-4" />

@@ -98,3 +98,43 @@ export const searchUsers = async (query: string, userId: string) => {
         take: 10,
     });
 };
+
+export const updateProfile = async (userId: string, data: { name?: string; email?: string }) => {
+    if (data.email) {
+        const existing = await prisma.user.findUnique({ where: { email: data.email } });
+        if (existing && existing.id !== userId) {
+            throw new Error('Email already in use');
+        }
+    }
+
+    return await prisma.user.update({
+        where: { id: userId },
+        data,
+        select: {
+            id: true,
+            name: true,
+            email: true,
+        },
+    });
+};
+
+export const changePassword = async (userId: string, { oldPassword, newPassword }: any) => {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+
+    const isValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isValid) {
+        const error: any = new Error('Invalid old password');
+        error.statusCode = 400; // Bad Request
+        throw error;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+    await prisma.user.update({
+        where: { id: userId },
+        data: { password: hashedPassword },
+    });
+
+    return true;
+};

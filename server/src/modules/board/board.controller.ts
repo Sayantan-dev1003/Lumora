@@ -21,8 +21,9 @@ export const getBoards = async (req: Request, res: Response, next: NextFunction)
         const userId = req.userId!;
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
+        const type = req.query.type as 'created' | 'member' | 'all' | undefined;
 
-        const result = await boardService.getBoards(userId, page, limit);
+        const result = await boardService.getBoards(userId, page, limit, type);
 
         return successResponse(res, result.boards, "Boards fetched successfully", {
             total: result.pagination.total,

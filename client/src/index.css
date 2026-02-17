@@ -4,83 +4,86 @@
 
 @layer base {
   :root {
-    --background: 40 33% 97%;
-    --foreground: 16 18% 19%;
+    /* Premium Light Theme */
+    --background: 40 20% 99%; /* Cleaner, warmer off-white */
+    --foreground: 20 10% 15%; /* Deep warm grey, high contrast */
 
-    --card: 40 33% 97%;
-    --card-foreground: 16 18% 19%;
+    --card: 0 0% 100%; /* Pure white cards for better lift */
+    --card-foreground: 20 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 16 18% 19%;
+    --popover-foreground: 20 10% 15%;
 
-    --primary: 45 100% 90%;
-    --primary-foreground: 16 18% 19%;
+    /* Golden Amber Primary - "Premium" Yellow/Orange */
+    --primary: 42 90% 55%; 
+    --primary-foreground: 0 0% 100%; /* White text on golden button */
 
-    --secondary: 30 100% 83%;
-    --secondary-foreground: 16 18% 19%;
+    --secondary: 40 20% 96%; /* Subtle warm grey for secondary actions */
+    --secondary-foreground: 20 10% 20%;
 
-    --muted: 40 20% 92%;
-    --muted-foreground: 16 10% 45%;
+    --muted: 40 20% 94%;
+    --muted-foreground: 25 5% 45%;
 
-    --accent: 30 100% 83%;
-    --accent-foreground: 16 18% 19%;
+    --accent: 42 80% 95%; /* Very light highlight based on primary */
+    --accent-foreground: 42 90% 40%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 30 20% 88%;
-    --input: 30 20% 88%;
-    --ring: 30 100% 70%;
+    --border: 40 10% 90%;
+    --input: 40 10% 90%;
+    --ring: 42 90% 55%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 40 33% 95%;
-    --sidebar-foreground: 16 18% 19%;
-    --sidebar-primary: 30 100% 83%;
-    --sidebar-primary-foreground: 16 18% 19%;
-    --sidebar-accent: 45 100% 90%;
-    --sidebar-accent-foreground: 16 18% 19%;
-    --sidebar-border: 30 20% 88%;
-    --sidebar-ring: 30 100% 70%;
+    --sidebar-background: 40 20% 98%;
+    --sidebar-foreground: 20 10% 20%;
+    --sidebar-primary: 42 90% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 15% 94%;
+    --sidebar-accent-foreground: 20 10% 15%;
+    --sidebar-border: 40 10% 90%;
+    --sidebar-ring: 42 90% 55%;
   }
 
   .dark {
-    --background: 20 15% 10%;
-    --foreground: 40 30% 90%;
+    /* Premium Dark Theme */
+    --background: 20 10% 10%; /* Deep warm styling, not pitch black */
+    --foreground: 40 20% 94%;
 
-    --card: 20 15% 13%;
-    --card-foreground: 40 30% 90%;
+    --card: 20 10% 13%;
+    --card-foreground: 40 20% 94%;
 
-    --popover: 20 15% 13%;
-    --popover-foreground: 40 30% 90%;
+    --popover: 20 10% 13%;
+    --popover-foreground: 40 20% 94%;
 
-    --primary: 45 60% 30%;
-    --primary-foreground: 40 30% 90%;
+    --primary: 42 90% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 50% 25%;
-    --secondary-foreground: 40 30% 90%;
+    --secondary: 20 10% 18%;
+    --secondary-foreground: 40 20% 94%;
 
     --muted: 20 10% 18%;
-    --muted-foreground: 30 15% 55%;
+    --muted-foreground: 40 10% 60%;
 
-    --accent: 30 50% 25%;
-    --accent-foreground: 40 30% 90%;
+    --accent: 20 10% 18%;
+    --accent-foreground: 40 20% 94%;
 
     --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
 
     --border: 20 10% 20%;
     --input: 20 10% 20%;
-    --ring: 30 60% 40%;
+    --ring: 42 90% 55%;
 
-    --sidebar-background: 20 15% 8%;
-    --sidebar-foreground: 40 30% 90%;
-    --sidebar-primary: 30 50% 25%;
-    --sidebar-primary-foreground: 40 30% 90%;
+    --sidebar-background: 20 10% 9%;
+    --sidebar-foreground: 40 20% 94%;
+    --sidebar-primary: 42 90% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 20 10% 18%;
-    --sidebar-accent-foreground: 40 30% 90%;
+    --sidebar-accent-foreground: 40 20% 94%;
     --sidebar-border: 20 10% 20%;
-    --sidebar-ring: 30 60% 40%;
+    --sidebar-ring: 42 90% 55%;
   }
 }
 
@@ -90,15 +93,31 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased selection:bg-primary/20 selection:text-primary;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-heading;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply  border-white/20 shadow-glass backdrop-blur-md;
+  }
+  
+  .glass-card {
+    @apply bg-white/80 dark:bg-black/40 backdrop-blur-md border border-white/20 shadow-sm transition-all hover:shadow-md;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
   }
 }

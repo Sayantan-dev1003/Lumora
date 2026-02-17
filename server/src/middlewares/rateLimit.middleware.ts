@@ -2,7 +2,7 @@ import rateLimit from "express-rate-limit";
 
 // Global Rate Limiter: 100 requests per 15 minutes
 export const globalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
+    windowMs: 1 * 60 * 1000,
     max: 100, // Limit each IP to 100 requests per windowMs
     message: {
         success: false,

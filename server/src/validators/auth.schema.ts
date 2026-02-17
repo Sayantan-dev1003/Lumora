@@ -14,3 +14,17 @@ export const loginSchema = z.object({
         password: z.string().min(1, { message: "Password is required" }),
     }),
 });
+
+export const updateProfileSchema = z.object({
+    body: z.object({
+        name: z.string().min(2).optional(),
+        email: z.string().email().optional(),
+    }),
+});
+
+export const changePasswordSchema = z.object({
+    body: z.object({
+        oldPassword: z.string().min(1, { message: "Old password is required" }),
+        newPassword: z.string().min(6, { message: "New password must be at least 6 characters" }),
+    }),
+});

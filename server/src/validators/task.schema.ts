@@ -50,6 +50,7 @@ export const moveTaskSchema = z.object({
 export const searchTaskSchema = z.object({
     query: paginationSchema.extend({
         search: z.string().optional(),
-        boardId: uuidSchema,
+        boardId: uuidSchema.optional(),
+        filter: z.enum(['assigned', 'created', 'all']).optional(),
     }),
 });

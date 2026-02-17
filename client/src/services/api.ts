@@ -38,6 +38,15 @@ export const logoutApi = async (): Promise<void> => {
   await api.post('/auth/logout');
 };
 
+export const updateProfile = async (data: { name?: string; email?: string }): Promise<{ user: User }> => {
+  const { data: res } = await api.patch('/auth/me', data);
+  return res.data;
+};
+
+export const changePassword = async (data: { oldPassword: string; newPassword: string }): Promise<void> => {
+  await api.post('/auth/change-password', data);
+};
+
 
 export const fetchMeApi = async (): Promise<{ user: User }> => {
   const { data } = await api.get('/auth/me');
@@ -51,10 +60,11 @@ export const searchUsersApi = async (query: string): Promise<User[]> => {
 
 
 // --- Boards ---
-export const fetchBoards = async (page = 1, limit = 10): Promise<{ boards: BoardSummary[], total: number }> => {
+export const fetchBoards = async (page = 1, limit = 10, type?: 'created' | 'member' | 'all'): Promise<{ boards: BoardSummary[], total: number }> => {
   const p = typeof page === 'number' ? page : 1;
   const l = typeof limit === 'number' ? limit : 10;
-  const { data } = await api.get(`/boards?page=${p}&limit=${l}`);
+  const t = type ? `&type=${type}` : '';
+  const { data } = await api.get(`/boards?page=${p}&limit=${l}${t}`);
   return {
     boards: data.data,
     total: data.pagination?.total || 0,
@@ -94,8 +104,11 @@ export const moveTaskApi = async (taskId: string, payload: { sourceListId: strin
   await api.patch(`/tasks/${taskId}/move`, payload);
 };
 
-export const searchTasks = async (query: string): Promise<Task[]> => {
-  const { data } = await api.get(`/tasks?search=${query}`);
+export const searchTasks = async (query: string, boardId?: string, filter?: 'assigned' | 'created' | 'all'): Promise<Task[]> => {
+  let url = `/tasks?search=${query}`;
+  if (boardId) url += `&boardId=${boardId}`;
+  if (filter) url += `&filter=${filter}`;
+  const { data } = await api.get(url);
   return data.data;
 };
 
@@ -115,9 +128,20 @@ export const deleteList = async (listId: string) => {
 };
 
 // --- Activity ---
-export const fetchActivity = async (boardId: string) => {
+export const fetchBoardActivity = async (boardId: string) => {
   const { data } = await api.get(`/boards/${boardId}/activity`);
+  return data.data;
+};
+
+export const fetchGlobalActivity = async (page = 1, limit = 20, filter: 'all' | 'mine' = 'all') => {
+  const { data } = await api.get(`/activity?page=${page}&limit=${limit}&filter=${filter}`);
   return data;
+};
+
+// --- Dashboard ---
+export const fetchDashboardStats = async () => {
+  const { data } = await api.get('/dashboard/stats');
+  return data.data;
 };
 
 export default api;

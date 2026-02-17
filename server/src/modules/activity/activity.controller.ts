@@ -27,3 +27,22 @@ export const getBoardActivity = async (req: Request, res: Response, next: NextFu
         next(error);
     }
 };
+
+export const getAllActivity = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.userId!;
+        const page = req.query.page ? parseInt(String(req.query.page)) : 1;
+        const limit = req.query.limit ? parseInt(String(req.query.limit)) : 20;
+        // Always fetch activities for the current user
+        const result = await activityService.getAllActivity(userId, page, limit);
+
+        return successResponse(res, result.activities, "Activities fetched successfully", {
+            total: result.pagination.total,
+            page: result.pagination.page,
+            limit: result.pagination.limit,
+            totalPages: result.pagination.totalPages
+        });
+    } catch (error) {
+        next(error);
+    }
+};

@@ -9,6 +9,7 @@ import boardRoutes from "./modules/board/board.routes";
 import listRoutes from "./modules/list/list.routes";
 import taskRoutes from "./modules/task/task.routes";
 import activityRoutes from "./modules/activity/activity.routes";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import { globalLimiter } from "./middlewares/rateLimit.middleware";
 import { sanitizeInput } from "./middlewares/sanitize.middleware";
 import { CLIENT_URL } from "./config/env";
@@ -29,10 +30,13 @@ app.use(sanitizeInput);
 app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
-app.use("/api/boards", activityRoutes);
+
 app.use("/api/boards", boardRoutes);
 app.use("/api/lists", listRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/activity", activityRoutes); // Global activity
+
 
 app.get("/health", (_req, res) => {
   res.json({

@@ -49,3 +49,28 @@ export interface BoardSummary {
   memberCount: number;
   createdAt: string;
 }
+
+export interface Activity {
+  id: string;
+  boardId: string;
+  userId: string;
+  actionType: string;
+  entityType: string;
+  entityId: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  board?: {
+    title: string;
+  };
+}
+
+export interface DashboardStats {
+  totalBoards: number;
+  totalTasks: number;
+  assignedToMe: number;
+  activeTasks: number;
+}

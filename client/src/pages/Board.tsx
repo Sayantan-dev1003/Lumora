@@ -239,17 +239,35 @@ const Board = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading board...</p>
+      <div className="h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-muted rounded-xl animate-pulse" />
+            <div className="h-6 w-32 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="flex items-center -space-x-2">
+            {[1, 2, 3].map(i => <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-muted animate-pulse" />)}
+          </div>
+        </div>
+        <div className="flex-1 overflow-x-auto p-4 md:p-6 flex gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="flex-shrink-0 w-72 md:w-80 bg-muted/30 rounded-2xl p-3 flex flex-col gap-3 h-[500px] border border-border/20">
+              <div className="h-5 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-20 w-full bg-muted/50 rounded-xl animate-pulse" />
+              <div className="h-20 w-full bg-muted/50 rounded-xl animate-pulse" />
+              <div className="h-20 w-full bg-muted/50 rounded-xl animate-pulse" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-full bg-gradient-to-br from-background via-background to-muted/30 flex flex-col overflow-hidden">
       <BoardHeader title={board?.title || 'Board'} members={allMembers} />
 
-      <div className="flex-1 overflow-x-auto p-4 md:p-6">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 md:p-6 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
           <div className="flex gap-4 items-start min-w-max">
             {lists.map((list) => (
@@ -283,7 +301,7 @@ const Board = () => {
 
           <DragOverlay>
             {activeTask && (
-              <Card className="p-3 rounded-lg bg-background shadow-lg border-accent rotate-2 w-72">
+              <Card className="p-3 rounded-xl bg-background/90 backdrop-blur-sm shadow-2xl border-primary/20 rotate-2 scale-105 cursor-grabbing w-72">
                 <p className="text-sm font-medium">{activeTask.title}</p>
               </Card>
             )}

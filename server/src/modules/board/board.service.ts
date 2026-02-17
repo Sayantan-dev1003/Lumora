@@ -45,31 +45,44 @@ export const createBoard = async (userId: string, input: CreateBoardInput) => {
 
 };
 
-export const getBoards = async (userId: string, page: number = 1, limit: number = 10) => {
+export const getBoards = async (userId: string, page: number = 1, limit: number = 10, type: 'created' | 'member' | 'all' = 'all') => {
     const skip = (page - 1) * limit;
 
-    const where = {
-        OR: [
-            {
-                members: {
-                    some: {
-                        userId,
+    let where: any = {};
+
+    if (type === 'created') {
+        where = { ownerId: userId };
+    } else if (type === 'member') {
+        where = {
+            members: {
+                some: { userId }
+            }
+        };
+    } else {
+        // 'all' or default - existing logic (Member OR Assigned Task)
+        where = {
+            OR: [
+                {
+                    members: {
+                        some: {
+                            userId,
+                        },
                     },
                 },
-            },
-            {
-                lists: {
-                    some: {
-                        tasks: {
-                            some: {
-                                assignedUserId: userId
+                {
+                    lists: {
+                        some: {
+                            tasks: {
+                                some: {
+                                    assignedUserId: userId
+                                }
                             }
                         }
                     }
                 }
-            }
-        ]
-    };
+            ]
+        };
+    }
 
     const [boards, total] = await Promise.all([
         prisma.board.findMany({
@@ -85,6 +98,25 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
                         id: true,
                         name: true,
                         email: true,
+                    }
+                },
+                members: {
+                    take: 5, // Limit for preview, though requirement says show 1-3 then +X. fetching 5 is safe.
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true // Avatar might be derived from email (gravatar) or just initials
+                            }
+                        }
+                    }
+                },
+                lists: {
+                    select: {
+                        _count: {
+                            select: { tasks: true }
+                        }
                     }
                 }
             }

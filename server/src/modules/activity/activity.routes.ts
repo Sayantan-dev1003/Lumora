@@ -4,6 +4,7 @@ import { authMiddleware as protect } from "../../middlewares/auth.middleware";
 
 const router = Router();
 
-router.get("/:id/activity", protect, activityController.getBoardActivity);
+
+router.get("/", protect, activityController.getAllActivity);
 
 export default router;

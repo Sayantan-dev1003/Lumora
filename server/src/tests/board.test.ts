@@ -53,6 +53,50 @@ describe('Board Module', () => {
         });
     });
 
+    describe('GET /api/boards/:id', () => {
+        it('should return a specific board', async () => {
+            const createRes = await request(app)
+                .post('/api/boards')
+                .set('Cookie', authCookie)
+                .send({ title: 'Single Board' });
+            const boardId = createRes.body.data.id;
+
+            const res = await request(app)
+                .get(`/api/boards/${boardId}`)
+                .set('Cookie', authCookie);
+
+            expect(res.status).toBe(200);
+            expect(res.body.data).toBeDefined();
+            expect(res.body.data.id).toBe(boardId);
+        });
+
+        it('should return 404 for non-existent board', async () => {
+            const nonExistentId = uuidv4();
+            const res = await request(app)
+                .get(`/api/boards/${nonExistentId}`)
+                .set('Cookie', authCookie);
+            expect(res.status).toBe(404);
+        });
+    });
+
+    describe('GET /api/boards/:id/activity', () => {
+        it('should return board activity', async () => {
+            const createRes = await request(app)
+                .post('/api/boards')
+                .set('Cookie', authCookie)
+                .send({ title: 'Activity Board' });
+            const boardId = createRes.body.data.id;
+
+            const res = await request(app)
+                .get(`/api/boards/${boardId}/activity`)
+                .set('Cookie', authCookie);
+
+            expect(res.status).toBe(200);
+            expect(res.body.data).toBeDefined();
+            expect(Array.isArray(res.body.data)).toBe(true);
+        });
+    });
+
     describe('DELETE /api/boards/:id', () => {
         it('should delete a board successfully', async () => {
             const createRes = await request(app)

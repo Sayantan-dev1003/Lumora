@@ -95,21 +95,20 @@ export const deleteTask = async (req: Request, res: Response, next: NextFunction
 export const searchTasks = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.userId!;
-        const { search, boardId, page, limit } = req.query as unknown as SearchTasksQuery;
+        const { search, boardId, page, limit, filter } = req.query as unknown as SearchTasksQuery & { filter?: 'assigned' | 'created' | 'all' };
 
-        if (!boardId) {
-            return errorResponse(res, "Board ID is required", 400);
-        }
-
-        const isMember = await boardService.isBoardMember(userId, boardId);
-        if (!isMember) {
-            return errorResponse(res, "Board not found", 404);
+        // If boardId is provided, check membership
+        if (boardId) {
+            const isMember = await boardService.isBoardMember(userId, boardId);
+            if (!isMember) {
+                return errorResponse(res, "Board not found", 404);
+            }
         }
 
         const pageNum = page ? parseInt(String(page)) : 1;
         const limitNum = limit ? parseInt(String(limit)) : 10;
 
-        const result = await taskService.searchTasks(userId, boardId, search || "", pageNum, limitNum);
+        const result = await taskService.searchTasks(userId, boardId, search || "", pageNum, limitNum, filter);
 
         return successResponse(res, result.tasks, "Tasks fetched successfully", {
             total: result.pagination.total,
