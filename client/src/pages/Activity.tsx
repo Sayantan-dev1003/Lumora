@@ -19,15 +19,9 @@ import {
 import { formatDistanceToNow, format, isToday, isYesterday } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { getInitials } from '@/lib/utils';
 
-const getInitials = (name: string) => {
-    return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-};
+
 
 const getActionIcon = (actionType: string) => {
     const type = actionType.toLowerCase();

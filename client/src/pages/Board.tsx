@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Plus, X } from 'lucide-react';
-import type { List, Task } from '@/types';
+import type { List, Task, BoardMember, Board as BoardType } from '@/types';
 
 const Board = () => {
   const { boardId } = useParams<{ boardId: string }>();
@@ -31,7 +31,7 @@ const Board = () => {
   });
 
   const currentUser = useAuthStore((s) => s.user);
-  const allMembers = board?.members.map((m: any) => m.user) || [];
+  const allMembers = board?.members.map((m: BoardMember) => m.user) || [];
 
   useEffect(() => {
     if (board) setLists(board.lists);
@@ -97,11 +97,11 @@ const Board = () => {
       };
 
       // Activity handler skipped for now as UI logic is separate
-      const handleMemberAdded = ({ member }: { member: any }) => {
-        queryClient.setQueryData(['board', boardId], (oldData: any) => {
+      const handleMemberAdded = ({ member }: { member: BoardMember }) => {
+        queryClient.setQueryData(['board', boardId], (oldData: BoardType | undefined) => {
           if (!oldData) return oldData;
           // Check if already exists
-          if (oldData.members.find((m: any) => m.user.id === member.user.id)) return oldData;
+          if (oldData.members.find((m: BoardMember) => m.user.id === member.user.id)) return oldData;
           return {
             ...oldData,
             members: [...oldData.members, member]
@@ -239,23 +239,26 @@ const Board = () => {
 
   if (isLoading) {
     return (
-      <div className="h-screen bg-gradient-to-br from-background via-background to-muted/30 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-10">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 bg-muted rounded-xl animate-pulse" />
-            <div className="h-6 w-32 bg-muted rounded animate-pulse" />
+      <div className="h-screen bg-background border-l border-border/40 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/40 bg-background/60 backdrop-blur-xl sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <div className="h-9 w-9 bg-muted rounded-xl animate-pulse" />
+            <div className="h-7 w-48 bg-muted rounded animate-pulse" />
           </div>
-          <div className="flex items-center -space-x-2">
-            {[1, 2, 3].map(i => <div key={i} className="h-8 w-8 rounded-full border-2 border-background bg-muted animate-pulse" />)}
+          <div className="flex items-center -space-x-3">
+            {[1, 2, 3].map(i => <div key={i} className="h-9 w-9 rounded-full border-2 border-background bg-muted animate-pulse" />)}
           </div>
         </div>
-        <div className="flex-1 overflow-x-auto p-4 md:p-6 flex gap-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="flex-shrink-0 w-72 md:w-80 bg-muted/30 rounded-2xl p-3 flex flex-col gap-3 h-[500px] border border-border/20">
-              <div className="h-5 w-24 bg-muted rounded animate-pulse" />
-              <div className="h-20 w-full bg-muted/50 rounded-xl animate-pulse" />
-              <div className="h-20 w-full bg-muted/50 rounded-xl animate-pulse" />
-              <div className="h-20 w-full bg-muted/50 rounded-xl animate-pulse" />
+        <div className="flex-1 overflow-x-auto p-4 md:p-6 flex gap-6">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="flex-shrink-0 w-80 bg-muted/30 rounded-2xl p-4 flex flex-col gap-4 h-[500px] border border-border/10">
+              <div className="flex justify-between items-center">
+                <div className="h-5 w-32 bg-muted rounded animate-pulse" />
+                <div className="h-5 w-8 bg-muted rounded-full animate-pulse" />
+              </div>
+              <div className="h-24 w-full bg-muted/50 rounded-xl animate-pulse" />
+              <div className="h-24 w-full bg-muted/50 rounded-xl animate-pulse" />
+              <div className="h-24 w-full bg-muted/50 rounded-xl animate-pulse" />
             </div>
           ))}
         </div>
@@ -264,45 +267,53 @@ const Board = () => {
   }
 
   return (
-    <div className="h-full bg-gradient-to-br from-background via-background to-muted/30 flex flex-col overflow-hidden">
+    <div className="h-full bg-background border-l border-border/40 flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-background to-background">
       <BoardHeader title={board?.title || 'Board'} members={allMembers} />
 
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 md:p-6 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 md:p-6 scrollbar-thin scrollbar-thumb-border/40 scrollbar-track-transparent">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-          <div className="flex gap-4 items-start min-w-max">
+          <div className="flex gap-6 items-start min-w-max h-full">
             {lists.map((list) => (
               <ListColumn key={list.id} list={list} onAddTask={handleAddTask} />
             ))}
 
             {/* Add list - Only for admins */}
             {board?.members.find((m) => m.userId === currentUser?.id)?.role === 'admin' && (
-              addingList ? (
-                <div className="flex-shrink-0 w-72 md:w-80 bg-muted/60 rounded-xl p-3 space-y-2">
-                  <Input
-                    autoFocus
-                    placeholder="List title..."
-                    value={newListTitle}
-                    onChange={(e) => setNewListTitle(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddList(); if (e.key === 'Escape') setAddingList(false); }}
-                    className="rounded-lg"
-                  />
-                  <div className="flex gap-1">
-                    <Button size="sm" onClick={handleAddList} className="rounded-lg">Add</Button>
-                    <Button size="sm" variant="ghost" onClick={() => setAddingList(false)}><X className="h-3 w-3" /></Button>
+              <div className="flex-shrink-0 w-80">
+                {addingList ? (
+                  <div className="bg-muted/30 rounded-2xl p-4 border border-border/10 space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                    <Input
+                      autoFocus
+                      placeholder="Enter list title..."
+                      value={newListTitle}
+                      onChange={(e) => setNewListTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddList(); if (e.key === 'Escape') setAddingList(false); }}
+                      className="rounded-xl bg-background/50 border-transparent focus:border-primary/30"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={handleAddList} className="rounded-lg">Add List</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setAddingList(false)} className="rounded-lg hover:bg-background/50"><X className="h-4 w-4" /></Button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <Button variant="outline" onClick={() => setAddingList(true)} className="flex-shrink-0 w-72 md:w-80 rounded-xl justify-start text-muted-foreground border-dashed">
-                  <Plus className="h-4 w-4 mr-2" /> Add another list
-                </Button>
-              )
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => setAddingList(true)}
+                    className="w-full h-14 rounded-2xl justify-start text-muted-foreground border-dashed border-border/60 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all duration-300"
+                  >
+                    <Plus className="h-5 w-5 mr-3" />
+                    <span className="text-base font-medium">Add another list</span>
+                  </Button>
+                )}
+              </div>
             )}
           </div>
 
           <DragOverlay>
             {activeTask && (
-              <Card className="p-3 rounded-xl bg-background/90 backdrop-blur-sm shadow-2xl border-primary/20 rotate-2 scale-105 cursor-grabbing w-72">
+              <Card className="p-3.5 rounded-xl bg-background/90 backdrop-blur-md shadow-2xl border-primary/20 rotate-2 scale-105 cursor-grabbing w-80 ring-1 ring-primary/10">
                 <p className="text-sm font-medium">{activeTask.title}</p>
+                {activeTask.description && <p className="text-xs text-muted-foreground mt-1 truncate">{activeTask.description}</p>}
               </Card>
             )}
           </DragOverlay>
@@ -313,7 +324,7 @@ const Board = () => {
         members={allMembers}
         onDelete={handleDeleteTask}
         onUpdate={handleUpdateTask}
-        userRole={board?.members.find((m: any) => m.userId === currentUser?.id)?.role || 'member'}
+        userRole={board?.members.find((m: BoardMember) => m.userId === currentUser?.id)?.role || 'member'}
       />
     </div>
   );

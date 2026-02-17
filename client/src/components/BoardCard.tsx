@@ -21,6 +21,9 @@ interface BoardCardProps {
             _count?: {
                 tasks?: number;
             };
+            tasks?: Array<{
+                id: string;
+            }>;
         }>;
     };
 }
@@ -60,11 +63,21 @@ const BoardCard = ({ board }: BoardCardProps) => {
                         )}
                     </div>
 
-                    {/* Total Tasks Count */}
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted/30 px-2.5 py-1.5 rounded-md">
-                        <ListTodo className="h-3.5 w-3.5" />
-                        <span>{board.lists?.reduce((acc: number, list: any) => acc + (list._count?.tasks || 0), 0) || 0} tasks</span>
-                    </div>
+                    {/* Task Count (Assigned vs Total) */}
+                    {(() => {
+                        const assignedTaskCount = board.lists?.reduce((acc: number, list: any) => acc + (list.tasks?.length || 0), 0) || 0;
+                        const totalTaskCount = board.lists?.reduce((acc: number, list: any) => acc + (list._count?.tasks || 0), 0) || 0;
+                        const hasAssignedTasks = assignedTaskCount > 0;
+
+                        return (
+                            <div className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md ${hasAssignedTasks ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted/30 text-muted-foreground"}`}>
+                                <ListTodo className="h-3.5 w-3.5" />
+                                <span>
+                                    {hasAssignedTasks ? `${assignedTaskCount} assigned` : `${totalTaskCount} tasks`}
+                                </span>
+                            </div>
+                        );
+                    })()}
                 </div>
             </CardContent>
         </Card>

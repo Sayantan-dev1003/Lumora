@@ -1,8 +1,6 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import type { User } from '@/types';
+import { getInitials } from '@/lib/utils';
 
 interface BoardHeaderProps {
   title: string;
@@ -10,32 +8,33 @@ interface BoardHeaderProps {
 }
 
 const BoardHeader = ({ title, members }: BoardHeaderProps) => {
-  const navigate = useNavigate();
-
   return (
-    <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-10 transition-all duration-300">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="rounded-xl">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <img src="/logo.png" alt="Lumora" className="h-12" />
+    <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border/40 bg-background/60 backdrop-blur-xl sticky top-0 z-10 transition-all duration-300">
+      <div className="flex items-center gap-4">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">{title}</h1>
+        </div>
       </div>
-      <div className="flex items-center -space-x-2">
-        <h1 className="text-lg md:text-xl font-bold mr-6">{title}</h1>
-        {members.slice(0, 4).map((m) => (
-          <Avatar key={m.id} className="h-8 w-8 border-2 border-background">
-            <AvatarFallback className="text-xs bg-accent text-accent-foreground">
-              {m.name?.charAt(0) || 'U'}
-            </AvatarFallback>
-          </Avatar>
-        ))}
-        {members.length > 4 && (
-          <Avatar className="h-8 w-8 border-2 border-background">
-            <AvatarFallback className="text-xs bg-muted text-muted-foreground">
-              +{members.length - 4}
-            </AvatarFallback>
-          </Avatar>
-        )}
+
+      <div className="flex items-center gap-4">
+        <div className="flex items-center -space-x-3 hover:space-x-1 transition-all duration-300">
+          {members.slice(0, 5).map((m, index) => (
+            <Avatar
+              key={m.id}
+              className="h-9 w-9 border-2 border-background shadow-sm ring-2 ring-transparent hover:ring-primary/20 hover:z-10 transition-all duration-300"
+              style={{ zIndex: 5 - index }}
+            >
+              <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-accent to-accent/50 text-accent-foreground">
+                {getInitials(m.name)}
+              </AvatarFallback>
+            </Avatar>
+          ))}
+          {members.length > 5 && (
+            <div className="h-9 w-9 rounded-full border-2 border-background bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground shadow-sm z-0">
+              +{members.length - 5}
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

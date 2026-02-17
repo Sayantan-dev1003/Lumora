@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 
 const Sidebar = () => {
     const location = useLocation();
@@ -59,7 +59,7 @@ const Sidebar = () => {
                 <div className="flex items-center gap-3 px-2 p-2 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer group">
                     <Avatar className="h-9 w-9 border border-border/50">
                         <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-primary/10 text-foreground font-medium">
-                            {user?.name?.charAt(0) || 'U'}
+                            {getInitials(user?.name || 'User')}
                         </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
@@ -70,7 +70,7 @@ const Sidebar = () => {
                         variant="ghost"
                         size="icon"
                         onClick={logout}
-                        className="shrink-0 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
+                        className="shrink-0 h-8 w-8 text-amber-700 hover:text-destructive hover:bg-destructive/10 transition-colors"
                     >
                         <LogOut className="h-4 w-4" />
                     </Button>

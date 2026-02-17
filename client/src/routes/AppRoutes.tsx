@@ -9,6 +9,7 @@ import CreatedByMe from '@/pages/CreatedByMe';
 import Activity from '@/pages/Activity';
 import Settings from '@/pages/Settings';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import BoardLayout from '@/components/layout/BoardLayout';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -34,6 +35,9 @@ const AppRoutes = () => (
       <Route path="/created" element={<CreatedByMe />} />
       <Route path="/activity" element={<Activity />} />
       <Route path="/settings" element={<Settings />} />
+    </Route>
+
+    <Route element={<ProtectedRoute><BoardLayout /></ProtectedRoute>}>
       <Route path="/board/:boardId" element={<Board />} />
     </Route>
 

@@ -116,6 +116,10 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
                     select: {
                         _count: {
                             select: { tasks: true }
+                        },
+                        tasks: {
+                            where: { assignedUserId: userId },
+                            select: { id: true }
                         }
                     }
                 }
