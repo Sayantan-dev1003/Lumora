@@ -1,131 +1,261 @@
 # Lumora
 
-Lumora is a real-time collaborative task management platform designed for teams who need seamless synchronization and a modern workflow. Built with a robust full-stack architecture, it features real-time updates, secure authentication, and a sleek, responsive interface.
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat&logo=prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)
+![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=flat&logo=socket.io&logoColor=white)
+
+Lumora is a powerful, real-time collaborative task management platform designed for modern teams. Built with a robust full-stack architecture, it ensures seamless synchronization, secure authentication, and a premium user experience.
 
 ## 🚀 Overview
 
-Lumora allows users to create boards, manage task lists, and collaborate with team members in real-time. Whether you're moving tasks across columns or updating descriptions, every change is instantly reflected for all active members on the board.
+Lumora empowers users to create boards, manage task lists, and collaborate with team members instantaneously. With features like drag-and-drop task management, real-time updates, and comprehensive activity tracking, Lumora serves as a centralized hub for productivity.
 
 ## ✨ Features
 
-- **Real-Time Collaboration**: Instant updates across all clients using Socket.io.
-- **Secure Authentication**: Cookie-based JWT authentication with HTTP-only security.
-- **Board Management**: Create, view, and delete boards with member-based access control.
-- **Drag & Drop Workflow**: Reorder tasks and move them between lists seamlessly.
-- **Activity Tracking**: Comprehensive audit logs for every action on a board.
-- **Optimistic UI**: Snappy interface that updates immediately while syncing in the background.
-- **Rate Limiting & Security**: Protected against brute-force and common web vulnerabilities.
-- **Performance Optimized**: Database indexing, pagination, and efficient Prisma queries.
+- **Real-Time Collaboration**: Instant updates across all connected clients using Socket.io.
+- **Secure Authentication**: Robust cookie-based JWT authentication with HTTP-only security.
+- **Board Management**: Create, organize, and manage multiple boards with granular access control.
+- **Drag & Drop Workflow**: Intuitive drag-and-drop interface for reordering tasks and moving them between lists.
+- **Activity Tracking**: Detailed audit logs for every action taken on a board.
+- **Optimistic UI**: responsive interface that updates immediately for a smooth user experience.
+- **Dashboard Analytics**: insightful statistics on task completion and project progress.
+- **Responsive Design**: Fully responsive UI built with Tailwind CSS and Shadcn UI.
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 ### Frontend
-- **React 18** + **Vite**
-- **TypeScript**
-- **Zustand** (State Management)
-- **React Query** (Server State)
-- **Tailwind CSS** (Styling)
-- **Socket.io Client** (Real-time)
-- **Lucide React** (Icons)
+- **Framework**: React 18 + Vite
+- **Language**: TypeScript
+- **State Management**: Zustand
+- **Server State**: TanStack Query (React Query)
+- **Styling**: Tailwind CSS + Shadcn UI
+- **Real-time**: Socket.io Client
+- **Drag & Drop**: @dnd-kit
+- **Icons**: Lucide React
 
 ### Backend
-- **Node.js** + **Express**
-- **TypeScript**
-- **Prisma 7** + **Neon Adapter** (PostgreSQL)
-- **Socket.io** (WebSockets)
-- **Zod** (Validation)
-- **JWT** (Authentication)
-- **Jest** (Testing)
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **Database**: PostgreSQL (via Neon)
+- **ORM**: Prisma 7
+- **Real-time**: Socket.io
+- **Validation**: Zod
+- **Authentication**: JWT (JSON Web Tokens)
+- **Security**: Helmet, CORS, Rate Limiting, XSS Sanitzation
 
----
+## 📂 Project Structure
+
+```bash
+lumora/
+├── client/                     # Frontend Application
+│   ├── src/
+│   │   ├── components/         # UI Components
+│   │   │   ├── board/          # Board-specific components
+│   │   │   ├── layout/         # Layout wrappers (Sidebar, etc.)
+│   │   │   ├── modals/         # Global modals
+│   │   │   ├── ui/             # Shadcn UI primitives (Button, Input, etc.)
+│   │   │   ├── BoardCard.tsx   # Dashboard board item
+│   │   │   └── NavLink.tsx     # Navigation helper
+│   │   ├── hooks/              # Custom React Hooks
+│   │   ├── pages/              # Route Pages
+│   │   │   ├── Activity.tsx    # Global activity feed
+│   │   │   ├── AssignedToMe.tsx# User's assigned tasks
+│   │   │   ├── Board.tsx       # Main kanban board view
+│   │   │   ├── CreatedByMe.tsx # Boards created by user
+│   │   │   ├── Dashboard.tsx   # Main dashboard
+│   │   │   ├── Login.tsx       # Auth login
+│   │   │   ├── NotFound.tsx    # 404 page
+│   │   │   ├── Settings.tsx    # User settings
+│   │   │   └── Signup.tsx      # Auth signup
+│   │   ├── services/           # API service layers
+│   │   ├── store/              # Zustand state stores
+│   │   └── types/              # TypeScript definitions
+│   └── ...
+├── server/                     # Backend API & WebSocket Server
+│   ├── src/
+│   │   ├── config/             # Configuration
+│   │   │   ├── db.ts           # Database connection
+│   │   │   └── env.ts          # Environment variables
+│   │   ├── middlewares/        # Express Middlewares
+│   │   │   ├── auth.middleware.ts
+│   │   │   ├── error.middleware.ts
+│   │   │   ├── rateLimit.middleware.ts
+│   │   │   └── validate.middleware.ts
+│   │   ├── modules/            # Feature Modules (Routes, Controllers, Services)
+│   │   │   ├── activity/       # Activity logging logic
+│   │   │   ├── auth/           # Authentication logic
+│   │   │   ├── board/          # Board management
+│   │   │   ├── dashboard/      # Statistics
+│   │   │   ├── list/           # List management
+│   │   │   └── task/           # Task management
+│   │   ├── socket/             # WebSocket Handling
+│   │   │   ├── socket.ts       # Main socket initialization
+│   │   │   └── socket.utils.ts # Socket event helpers
+│   │   ├── utils/              # Shared Utilities
+│   │   │   ├── jwt.ts          # Token generation
+│   │   │   ├── logger.ts       # Logging utility
+│   │   │   └── permissions.ts  # Role-based access control
+│   │   └── app.ts              # Express App setup
+│   └── prisma/                 # Database Schema & Migrations
+└── ...
+```
 
 ## 🏗 Architecture Overview
 
 ### System Architecture
 ```mermaid
 graph TD
-    A[Frontend - React SPA] <-->|REST API + WebSockets| B[Backend - Express + Socket.io]
-    B <-->|Prisma ORM| C[(PostgreSQL - Neon)]
+    Client[Frontend - React SPA] <-->|REST API + WebSockets| Server[Backend - Express + Socket.io]
+    Server <-->|Prisma ORM| Database[(PostgreSQL - Neon)]
+    
+    subgraph "Real-Time Layer"
+    Client -- "Socket Events" --> Server
+    Server -- "Broadcast Updates" --> Client
+    end
 ```
 
 ### 🔄 Real-Time Strategy
-Lumora uses a room-based strategy for real-time updates. When a user opens a board, they join a socket room specific to that board ID. Events like `task_created`, `task_updated`, or `list_deleted` are emitted only to the members of that specific room, ensuring scalability and data privacy.
+Lumora utilizes a **room-based architecture** for real-time updates.
+1.  **Connection**: When a user connects, they are authenticated via their session cookie.
+2.  **Joining Rooms**: Upon entering a board, the client emits a `join_board` event with the `boardId`.
+3.  **Event Broadcasting**: Actions like `task_moved` or `list_created` are processed by the server and then emitted specifically to that board's room.
+4.  **Optimistic Updates**: The frontend updates the UI immediately while waiting for server confirmation, ensuring a snappy experience.
 
 ### 🗄 Database Design
-The schema is optimized for relational integrity and query performance:
-- **Users**: Core user profiles.
-- **Boards**: Collections of lists and tasks.
-- **BoardMembers**: Join table for many-to-many relationship between Users and Boards with role-based access.
-- **Lists**: Ordered vertical containers within a board.
-- **Tasks**: Individual units of work with positioning and labels.
-- **Activity**: History logs linked to boards and users.
-
-*Indexing is applied on foreign keys and frequently searched fields (like task titles and board IDs) to ensure sub-millisecond query execution.*
-
-### 🔐 Security Strategy
-- **JWT in HTTP-only Cookies**: Prevents XSS attacks from stealing tokens.
-- **CSRF Protection**: SameSite cookie attributes and CORS validation.
-- **Input Validation**: Strict schema validation using Zod for all API requests.
-- **Rate Limiting**: Protects authentication and expensive endpoints from abuse.
-- **Sanitization**: Automatic HTML sanitization to prevent injection attacks.
-
----
+The database schema is designed for relational integrity and efficiency:
+-   **Users**: Stores authentication and profile data.
+-   **Boards**: The top-level container for projects.
+-   **Lists**: Vertical columns within a board (e.g., "To Do", "In Progress").
+-   **Tasks**: Individual items within lists, supporting ordering and assignment.
+-   **BoardMembers**: Manages many-to-many relationships between Users and Boards with roles.
+-   **Activity**: an append-only log of all actions for audit trails.
 
 ## 📡 API Documentation
 
-### 🔐 Auth
-- `POST /api/auth/signup`: Create a new account.
-- `POST /api/auth/login`: Authenticate and receive session cookie.
-- `POST /api/auth/logout`: Clear session cookie.
-- `GET /api/auth/me`: Get current authenticated user details.
+### Auth
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/auth/signup` | Register a new user account. |
+| `POST` | `/api/auth/login` | Authenticate user and set session cookie. |
+| `POST` | `/api/auth/logout` | Clear session cookie. |
+| `GET` | `/api/auth/me` | Get currently authenticated user details. |
+| `PATCH` | `/api/auth/me` | Update user profile information. |
+| `POST` | `/api/auth/change-password` | Change user password. |
+| `GET` | `/api/auth/users` | Search for users by name or email. |
 
-### 📋 Boards
-- `GET /api/boards?page=1&limit=10`: List boards with pagination.
-- `POST /api/boards`: Create a new board.
-- `GET /api/boards/:id`: Get detailed board view with lists and tasks.
-- `DELETE /api/boards/:id`: Archive/Delete a board.
-- `GET /api/boards/:id/activity`: Fetch activity logs for a specific board.
+### Boards
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/boards` | Get all boards for the current user. |
+| `POST` | `/api/boards` | Create a new board. |
+| `GET` | `/api/boards/:id` | Get details of a specific board. |
+| `DELETE` | `/api/boards/:id` | Delete a board. |
+| `GET` | `/api/boards/:id/activity` | Get activity logs for a specific board. |
 
-### 📑 Lists
-- `POST /api/lists`: Create a list on a board.
-- `PATCH /api/lists/:id`: Update list title or position.
-- `DELETE /api/lists/:id`: Remove a list and its tasks.
+### Lists
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/lists` | Create a list within a board. |
+| `PATCH` | `/api/lists/:id` | Update list title or position. |
+| `DELETE` | `/api/lists/:id` | Delete a list. |
 
-### 📝 Tasks
-- `GET /api/tasks?search=...`: Search tasks across boards.
-- `POST /api/tasks`: Create a task in a list.
-- `PATCH /api/tasks/:id`: Update task content, position, or move between lists.
-- `DELETE /api/tasks/:id`: Remove a task.
+### Tasks
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/tasks` | Create a new task. |
+| `GET` | `/api/tasks` | Search tasks. |
+| `PATCH` | `/api/tasks/:id` | Update task details. |
+| `PATCH` | `/api/tasks/:id/move` | Move a task to a different list or position. |
+| `DELETE` | `/api/tasks/:id` | Delete a task. |
 
----
+### Dashboard & Activity
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/dashboard/stats` | Get aggregated user statistics. |
+| `GET` | `/api/activity` | Get global activity feed for the user. |
 
-## 📦 Installation
+## ⚖️ Assumptions & Trade-offs
 
-### Backend
-1. `cd server`
-2. `npm install`
-3. Create `.env` from `.env.example` and add your database URL.
-4. `npx prisma generate`
-5. `npm run dev`
+1.  **Optimistic UI vs. Consistency**: We prioritize UI responsiveness. In rare cases of network failure, the UI might briefly show a state that wasn't saved. We handle this by rolling back changes on error, but it's a trade-off for better UX.
+2.  **Soft Deletes**: Currently, deletions (boards, lists, tasks) are hard deletes. In a production enterprise environment, we would implementation soft deletes (archiving) to prevent data loss.
+3.  **Authentication**: We use simple email/password auth. OAuth (Google/GitHub) would be a future enhancement for better onboarding.
 
-### Frontend
-1. `cd client`
-2. `npm install`
-3. Create `.env` from `.env.example`.
-4. `npm run dev`
+## 💾 Demo Credentials
 
-## 🧪 Running Tests
+You can use the following credentials to test the application quickly:
+
+**User 1:**
+-   **Email**: `sayantanhalder78@gmail.com`
+-   **Password**: `123456`
+
+**User 2:**
+-   **Email**: `Sayantan.Halder.23co@iitram.ac.in`
+-   **Password**: `123456`
+
+## 📦 Installation & Setup
+
+### Prerequisites
+-   Node.js (v18+)
+-   npm or yarn
+-   PostgreSQL Database (or a connection string to a hosted instance like Neon)
+
+### 1. Clone the Repository
 ```bash
-# Backend tests
-cd server
-npm run test
-
-# Frontend tests (if applicable)
-cd client
-npm run test
+git clone https://github.com/Sayantan-dev1003/Lumora.git
+cd lumora
 ```
 
-## 🏁 Production Notes
-- **Scalability**: The backend is stateless, allowing for horizontal scaling.
-- **Prisma 7**: Leverages the latest Prisma features for Neon serverless databases.
-- **WebSocket Scaling**: Ready for Redis adapter integration for multi-node socket deployments.
+### 2. Backend Setup
+```bash
+cd server
+npm install
+
+# Create .env file
+cp .env.example .env
+# Update DATABASE_URL in .env
+# Generate Prisma Client
+npx prisma generate
+
+# Run Database Migrations
+npx prisma migrate dev
+
+# Start Server
+npm run dev
+```
+
+### 3. Frontend Setup
+```bash
+cd client
+npm install
+
+# Create .env file
+cp .env.example .env
+
+# Start Client
+npm run dev
+```
+
+The application should now be running at `http://localhost:8080` (frontend) and communicating with `http://localhost:3000` (backend).
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1.  Fork the repository
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 💖 Support
+
+If you have any questions or feedback, please reach out to us at [support@lumora.app](mailto:support@lumora.app).
