@@ -52,56 +52,56 @@ Lumora empowers users to create boards, manage task lists, and collaborate with 
 
 ```bash
 lumora/
-├── client/                     # Frontend Application
+├── client/                      # Frontend Application
 │   ├── src/
-│   │   ├── components/         # UI Components
-│   │   │   ├── board/          # Board-specific components
-│   │   │   ├── layout/         # Layout wrappers (Sidebar, etc.)
-│   │   │   ├── modals/         # Global modals
-│   │   │   ├── ui/             # Shadcn UI primitives (Button, Input, etc.)
-│   │   │   ├── BoardCard.tsx   # Dashboard board item
-│   │   │   └── NavLink.tsx     # Navigation helper
-│   │   ├── hooks/              # Custom React Hooks
-│   │   ├── pages/              # Route Pages
-│   │   │   ├── Activity.tsx    # Global activity feed
-│   │   │   ├── AssignedToMe.tsx# User's assigned tasks
-│   │   │   ├── Board.tsx       # Main kanban board view
-│   │   │   ├── CreatedByMe.tsx # Boards created by user
-│   │   │   ├── Dashboard.tsx   # Main dashboard
-│   │   │   ├── Login.tsx       # Auth login
-│   │   │   ├── NotFound.tsx    # 404 page
-│   │   │   ├── Settings.tsx    # User settings
-│   │   │   └── Signup.tsx      # Auth signup
-│   │   ├── services/           # API service layers
-│   │   ├── store/              # Zustand state stores
-│   │   └── types/              # TypeScript definitions
+│   │   ├── components/          # UI Components
+│   │   │   ├── board/           # Board-specific components
+│   │   │   ├── layout/          # Layout wrappers (Sidebar, etc.)
+│   │   │   ├── modals/          # Global modals
+│   │   │   ├── ui/              # Shadcn UI primitives (Button, Input, etc.)
+│   │   │   ├── BoardCard.tsx    # Dashboard board item
+│   │   │   └── NavLink.tsx      # Navigation helper
+│   │   ├── hooks/               # Custom React Hooks
+│   │   ├── pages/               # Route Pages
+│   │   │   ├── Activity.tsx     # Global activity feed
+│   │   │   ├── AssignedToMe.tsx # User's assigned tasks
+│   │   │   ├── Board.tsx        # Main kanban board view
+│   │   │   ├── CreatedByMe.tsx  # Boards created by user
+│   │   │   ├── Dashboard.tsx    # Main dashboard
+│   │   │   ├── Login.tsx        # Auth login
+│   │   │   ├── NotFound.tsx     # 404 page
+│   │   │   ├── Settings.tsx     # User settings
+│   │   │   └── Signup.tsx       # Auth signup
+│   │   ├── services/            # API service layers
+│   │   ├── store/               # Zustand state stores
+│   │   └── types/               # TypeScript definitions
 │   └── ...
-├── server/                     # Backend API & WebSocket Server
+├── server/                      # Backend API & WebSocket Server
 │   ├── src/
-│   │   ├── config/             # Configuration
-│   │   │   ├── db.ts           # Database connection
-│   │   │   └── env.ts          # Environment variables
-│   │   ├── middlewares/        # Express Middlewares
+│   │   ├── config/              # Configuration
+│   │   │   ├── db.ts            # Database connection
+│   │   │   └── env.ts           # Environment variables
+│   │   ├── middlewares/         # Express Middlewares
 │   │   │   ├── auth.middleware.ts
 │   │   │   ├── error.middleware.ts
 │   │   │   ├── rateLimit.middleware.ts
 │   │   │   └── validate.middleware.ts
-│   │   ├── modules/            # Feature Modules (Routes, Controllers, Services)
-│   │   │   ├── activity/       # Activity logging logic
-│   │   │   ├── auth/           # Authentication logic
-│   │   │   ├── board/          # Board management
-│   │   │   ├── dashboard/      # Statistics
-│   │   │   ├── list/           # List management
-│   │   │   └── task/           # Task management
-│   │   ├── socket/             # WebSocket Handling
-│   │   │   ├── socket.ts       # Main socket initialization
-│   │   │   └── socket.utils.ts # Socket event helpers
-│   │   ├── utils/              # Shared Utilities
-│   │   │   ├── jwt.ts          # Token generation
-│   │   │   ├── logger.ts       # Logging utility
-│   │   │   └── permissions.ts  # Role-based access control
-│   │   └── app.ts              # Express App setup
-│   └── prisma/                 # Database Schema & Migrations
+│   │   ├── modules/             # Feature Modules (Routes, Controllers, Services)
+│   │   │   ├── activity/        # Activity logging logic
+│   │   │   ├── auth/            # Authentication logic
+│   │   │   ├── board/           # Board management
+│   │   │   ├── dashboard/       # Statistics
+│   │   │   ├── list/            # List management
+│   │   │   └── task/            # Task management
+│   │   ├── socket/              # WebSocket Handling
+│   │   │   ├── socket.ts        # Main socket initialization
+│   │   │   └── socket.utils.ts  # Socket event helpers
+│   │   ├── utils/               # Shared Utilities
+│   │   │   ├── jwt.ts           # Token generation
+│   │   │   ├── logger.ts        # Logging utility
+│   │   │   └── permissions.ts   # Role-based access control
+│   │   └── app.ts               # Express App setup
+│   └── prisma/                  # Database Schema & Migrations
 └── ...
 ```
 
