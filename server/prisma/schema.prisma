@@ -79,6 +79,8 @@ model Task {
   creator      User  @relation("TaskCreator", fields: [creatorId], references: [id])
   creatorId    String
 
+  status         String   @default("TODO") // "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE"
+
   @@index([listId])
   @@index([assignedUserId])
   @@index([listId, position]) // Optimized for fetching tasks in order

@@ -26,6 +26,7 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
                 position: nextPosition,
                 assignedUserId: input.assignedUserId,
                 creatorId: userId,
+                status: input.status !== undefined ? input.status : "TODO",
             },
         });
 
@@ -108,14 +109,6 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
         }
     }
 
-    // If a new member was added (logic inside transaction implicity handles this but doesn't return flag, let's check)
-    // Actually createTask logic above checks existingMember. If it didn't exist, it created it.
-    // But the transaction return value doesn't tell us if it was *new*.
-    // We might need to refactor createTask to return that info, or just emit blindly? No, bad.
-    // Let's look at the transaction again.
-    // It does: `if (!existingMember) { await tx.boardMember.create(...) }`
-    // We should return `newMemberAdded` from the transaction.
-
     return result.task;
 };
 
@@ -132,13 +125,6 @@ export const moveTask = async (taskId: string, userId: string, input: MoveTaskIn
         });
 
         if (!member) throw new Error("Unauthorized");
-
-        // Members cannot move tasks unless they created them (implies edit permission)
-        // "Members cannot modify board structure" also implies they shouldn't move tasks freely?
-        // Requirement says: "Member ... Cannot: See full board structure, Modify board structure"
-        // But for Task Edit Permissions: "Task created by member: ✅ YES"
-        // Moving a task updates its position/list. This is an edit.
-        // So checking canEditTask is correct.
 
         if (!canEditTask(task, userId, member.role)) {
             throw new Error("Forbidden: You cannot move this task");
@@ -169,7 +155,7 @@ export const moveTask = async (taskId: string, userId: string, input: MoveTaskIn
                 if (reordered[i].id === taskId) {
                     savedTask = await tx.task.update({
                         where: { id: taskId },
-                        data: { position: i + 1 } // 1-based indexing for safety/convention
+                        data: { position: i + 1 }
                     });
                 } else {
                     if (reordered[i].position !== i + 1) {
@@ -259,11 +245,6 @@ export const moveTask = async (taskId: string, userId: string, input: MoveTaskIn
     });
 
     if (result.boardId && result.task) {
-        // task_moved is tricky. The payload is { taskId, ... }. 
-        // We need to check if they can view the task.
-        // Also: If I move a task OUT of someone's view? (e.g. unassigning via drag? not possible via drag usually)
-        // If I move a task I created (member), I can see it.
-        // Just check task visibility.
 
         await emitToBoardSecurely(result.boardId, "task_moved", {
             taskId: result.task.id,
@@ -306,11 +287,27 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
             throw new Error("Forbidden: You do not have permission to edit this task");
         }
 
-        // Specific Rule: "Members should NOT assign tasks."
-        // If role is member and assignedUserId is changing, block it.
-        // But wait, canEditTask returns TRUE if task.createdById === userId.
-        // Even if I created it, can I assign it?
-        // Requirement: "Members should NOT assign tasks... Only admin can reassign."
+        const isCreator = existingTask.creatorId === userId;
+        const isAssignee = existingTask.assignedUserId === userId;
+        const isAdmin = member.role === "admin";
+        const isOnlyAssignee = isAssignee && !isCreator && !isAdmin;
+
+        // If the user is ONLY the assignee (not creator or admin), they can only update status, and they cannot set it to DONE
+        if (isOnlyAssignee) {
+            if (
+                (input.title !== undefined && input.title !== existingTask.title) ||
+                (input.description !== undefined && input.description !== existingTask.description) ||
+                (input.listId !== undefined && input.listId !== existingTask.listId) ||
+                (input.position !== undefined && input.position !== existingTask.position) ||
+                (input.assignedUserId !== undefined && input.assignedUserId !== existingTask.assignedUserId)
+            ) {
+                throw new Error("Forbidden: As an assignee, you can only update the task status");
+            }
+
+            if (input.status === 'DONE') {
+                throw new Error("Forbidden: As an assignee, you cannot mark this task as DONE. Please set it to IN_REVIEW.");
+            }
+        }
 
         if (member.role === "member" && input.assignedUserId !== undefined) {
             throw new Error("Forbidden: Only admins can assign tasks");
@@ -471,6 +468,7 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                 assignedUserId: input.assignedUserId,
                 listId: finalListId,
                 position: finalPosition,
+                status: input.status !== undefined ? input.status : existingTask.status,
             },
         });
 
@@ -518,12 +516,6 @@ export const deleteTask = async (taskId: string, userId: string) => {
             where: { boardId_userId: { boardId: listObj.boardId, userId } }
         });
 
-        // Members can delete tasks they created? 
-        // Admin: "can delete tasks". Member: "See only tasks...".
-        // Usually "Edit" includes "Delete" if you own it.
-        // Task Edit Permission says "Task created by member: ✅ YES".
-        // Let's assume delete is allowed if you created it, mirroring edit.
-
         if (!member || !canEditTask(task, userId, member.role)) {
             throw new Error("Forbidden: You cannot delete this task");
         }
@@ -558,28 +550,8 @@ export const deleteTask = async (taskId: string, userId: string) => {
     });
 
     if (result && result.boardId && result.task) {
-        // Let's refactor deleteTask to return `task`
-
-        // Wait, I can't easily change the return type logic inside multi_replace without seeing full context.
-        // In the original file, `deleteTask` returns `void` implicitly or just `result`?
-        // It returns `result` which is `{ boardId: ... }`.
-
-        // I will assume I can update `deleteTask` to return the task locally variable `task` found inside transaction.
-        // CHECK: In `deleteTask` function body (it's in the file view), `const task` is inside `prisma.$transaction`.
-        // The transaction returns ` { boardId ... }`.
-
-        // I need to change `deleteTask` logic block to return the task.
-        // Since I'm in `multi_replace`, I can target the transaction return.
-
-        // But for this block (the emission block at the end of function), I need `result.task`.
-        // I will update the transaction return first in another chunk? 
-        // No, I can do it here if I include the transaction block in replace?
-        // The transaction block is huge.
-
-        // Actually, `emitToBoardSecurely` takes `entity`. If I pass the deleted task, `canViewTask` still works (it just checks IDs).
-        // So I need `result.task`.
+        await emitToBoardSecurely(result.boardId, "task_deleted", { taskId }, "task", result.task);
     }
-
 };
 
 export const getTaskById = async (taskId: string) => {
@@ -595,17 +567,13 @@ export const searchTasks = async (userId: string, boardId: string | undefined, q
     let where: any = {
         title: {
             contains: query,
-            mode: 'insensitive', // Case insensitive search
+            mode: 'insensitive',
         }
     };
 
     if (boardId) {
         where.list = { boardId };
 
-        // Filter for members (if boardId is present, we assume caller checked basic membership, but we need to refine access if role is member?)
-        // The controller checks `isBoardMember`.
-        // But inside `searchTasks`, we also had logic: "if member && !admin ... assigned OR created".
-        // We should preserve that for board-scoped search.
         const member = await prisma.boardMember.findUnique({
             where: { boardId_userId: { boardId, userId } }
         });
@@ -618,20 +586,11 @@ export const searchTasks = async (userId: string, boardId: string | undefined, q
         }
     } else {
         // Global Search
-        // We must ensure users only see tasks they have access to.
-        // 1. Tasks in boards they are members of.
-        // AND match filter.
-
         if (filter === 'assigned') {
             where.assignedUserId = userId;
         } else if (filter === 'created') {
             where.creatorId = userId;
         } else {
-            // 'all' or default in global context?
-            // "Assigned to Me" page uses this with filter='assigned'.
-            // "Created by Me" page uses this with filter='created'.
-            // If just searching globally without filter?
-            // We should restrict to boards user is member of.
             const userBoards = await prisma.boardMember.findMany({
                 where: { userId },
                 select: { boardId: true }
@@ -642,24 +601,7 @@ export const searchTasks = async (userId: string, boardId: string | undefined, q
                 boardId: { in: boardIds }
             };
 
-            // Should we also enforce "assigned OR created" if they are strict members in those boards?
-            // Existing logic for "member" role in a board restricts them to only seeing their own tasks?
-            // "Member ... Cannot: See full board structure ... Activity page shows only allowed logs".
-            // If they can't see other tasks in Board View, they shouldn't see them in Global Search either.
-            // So we need to respect the per-board role. This is complex in a single query.
-            // For now, let's assume if they are searching "assigned" or "created", it's fine.
-            // If 'all', we might be exposing tasks they shouldn't see if they are just 'member' in that board.
-            // Safest: Only return tasks where (assigned==userId OR created==userId) GLOBALLY if no boardId is specified?
-            // Or just stick to the requested filters.
-
-            // Requirement only asks for "Assigned to Me" and "Created by Me" pages.
-            // It uses search bar in those pages?
-            // "Assigned to Me... Add: Search bar".
-            // So mostly we use filter='assigned' + search query.
-
             if (!filter) {
-                // If no filter provided, default to what? 
-                // Maybe just (assigned OR created)?
                 where.OR = [
                     { assignedUserId: userId },
                     { creatorId: userId }

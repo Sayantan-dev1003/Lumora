@@ -17,6 +17,7 @@ export interface Task {
   creator?: User;
   createdAt: string;
   updatedAt: string;
+  status: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
 }
 
 export interface List {

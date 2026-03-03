@@ -101,13 +101,13 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
                     }
                 },
                 members: {
-                    take: 5, // Limit for preview, though requirement says show 1-3 then +X. fetching 5 is safe.
+                    take: 5,
                     include: {
                         user: {
                             select: {
                                 id: true,
                                 name: true,
-                                email: true // Avatar might be derived from email (gravatar) or just initials
+                                email: true
                             }
                         }
                     }
@@ -115,7 +115,11 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
                 lists: {
                     select: {
                         _count: {
-                            select: { tasks: true }
+                            select: {
+                                tasks: {
+                                    where: { status: { not: "DONE" } }
+                                }
+                            }
                         },
                         tasks: {
                             where: { assignedUserId: userId },

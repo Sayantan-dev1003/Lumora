@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useBoardStore } from '@/store/boardStore';
 import { useAuthStore } from '@/store/authStore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -18,7 +18,7 @@ import type { User } from '@/types';
 interface TaskModalProps {
   members: User[];
   onDelete: (taskId: string) => void;
-  onUpdate: (taskId: string, updates: { title?: string; description?: string; assignedUserId?: string }) => void;
+  onUpdate: (taskId: string, updates: { title?: string; description?: string; assignedUserId?: string; status?: string; }) => void;
   userRole: string;
 }
 
@@ -29,20 +29,20 @@ const TaskModal = ({ members, onDelete, onUpdate, userRole }: TaskModalProps) =>
   // Determine permissions
   const isCreator = selectedTask?.creatorId === currentUser?.id;
   const isAdmin = userRole === 'admin';
+  const isAssignee = selectedTask?.assignedUserId === currentUser?.id;
 
-  const canEdit = isAdmin || (isCreator && userRole === 'member');
+  const canEditDetails = isAdmin || (isCreator && userRole === 'member');
   const canAssign = isAdmin;
 
-  // If read-only, effectively disable inputs.
-  const isReadOnly = !canEdit;
+  const isTaskCompleted = selectedTask?.status === 'DONE';
 
-  // For now, let's try to pass it from parent `Board.tsx`.
-
-  // For now, let's try to pass it from parent `Board.tsx`.
+  const isReadOnlyDetails = !canEditDetails || isTaskCompleted;
+  const canAssignActual = canAssign && !isTaskCompleted;
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assignedUserId, setAssignedUserId] = useState('');
+  const [status, setStatus] = useState('TODO');
   const [openCombobox, setOpenCombobox] = useState(false);
   const [foundUsers, setFoundUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,32 +58,35 @@ const TaskModal = ({ members, onDelete, onUpdate, userRole }: TaskModalProps) =>
 
   // Sync local state when task changes
   const task = selectedTask;
-  if (task && title === '' && !description) {
-    // Initialize on open
-    setTimeout(() => {
-      setTitle(task.title);
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title || '');
       setDescription(task.description || '');
       setAssignedUserId(task.assignedUserId || '');
-    }, 0);
-  }
+      setStatus(task.status || 'TODO');
+    } else {
+      setTitle('');
+      setDescription('');
+      setAssignedUserId('');
+      setStatus('TODO');
+    }
+  }, [task]);
 
   const isDirty = task ? (
     title !== task.title ||
     description !== (task.description || '') ||
-    assignedUserId !== (task.assignedUserId || '')
+    assignedUserId !== (task.assignedUserId || '') ||
+    status !== (task.status || 'TODO')
   ) : false;
 
   const handleClose = () => {
-    // Link auto-save on close to permission and actual changes
-    if (task && canEdit && isDirty) {
-      onUpdate(task.id, { title, description, assignedUserId: assignedUserId || undefined });
-    }
+    // Only close without saving. Remove auto-save behavior.
     closeTaskModal();
   };
 
   const handleSave = () => {
     if (task) {
-      onUpdate(task.id, { title, description, assignedUserId: assignedUserId || undefined });
+      onUpdate(task.id, { title, description, assignedUserId: assignedUserId || undefined, status });
       closeTaskModal();
     }
   };
@@ -108,7 +111,7 @@ const TaskModal = ({ members, onDelete, onUpdate, userRole }: TaskModalProps) =>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              disabled={isReadOnly}
+              disabled={isReadOnlyDetails}
               className="rounded-lg text-base font-medium"
             />
           </div>
@@ -117,16 +120,16 @@ const TaskModal = ({ members, onDelete, onUpdate, userRole }: TaskModalProps) =>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={isReadOnly ? "No description" : "Add a description..."}
-              disabled={isReadOnly}
+              placeholder={isReadOnlyDetails ? "No description" : "Add a description..."}
+              disabled={isReadOnlyDetails}
               className="rounded-lg min-h-[80px] resize-none"
             />
           </div>
           <div className="space-y-2">
             <Label>Assignee</Label>
             <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-              <PopoverTrigger asChild disabled={!canAssign}>
-                <Button variant="outline" role="combobox" aria-expanded={openCombobox} disabled={!canAssign} className="w-full justify-between rounded-lg">
+              <PopoverTrigger asChild disabled={!canAssignActual}>
+                <Button variant="outline" role="combobox" aria-expanded={openCombobox} disabled={!canAssignActual} className="w-full justify-between rounded-lg">
                   {assignedUserId ? allUsers.find((u) => u.id === assignedUserId)?.name || "Unknown User" : "Unassigned"}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -171,35 +174,35 @@ const TaskModal = ({ members, onDelete, onUpdate, userRole }: TaskModalProps) =>
             </Popover>
           </div>
 
-          {/* Activity placeholder */}
-          <div className="space-y-2 border-t border-border pt-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MessageSquare className="h-4 w-4" />
-              <span>Activity</span>
-            </div>
-            <p className="text-xs text-muted-foreground italic">No activity yet</p>
+          <div className="space-y-2 pt-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={setStatus} disabled={isReadOnlyDetails}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TODO">To Do</SelectItem>
+                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                <SelectItem value="IN_REVIEW">In Review</SelectItem>
+                <SelectItem value="DONE" disabled={!isAdmin && !isCreator && isAssignee}>Done</SelectItem>
+              </SelectContent>
+            </Select>
+            {!isAdmin && !isCreator && isAssignee && (
+              <p className="text-xs text-muted-foreground mt-1">As an assignee, you can mark tasks up to "In Review".</p>
+            )}
           </div>
 
           <div className="flex justify-between items-center pt-2">
-            {canEdit && (
+            {canEditDetails && !isTaskCompleted && (
               <Button variant="destructive" size="sm" onClick={handleDelete} className="rounded-lg gap-1">
                 <Trash2 className="h-3.5 w-3.5" /> Delete
               </Button>
             )}
-            {!canEdit && <div />} {/* Spacer */}
+            {!(canEditDetails && !isTaskCompleted) && <div />} {/* Spacer */}
 
-            {/* Show Save only if editable, or "Close" if read-only? 
-                Actually, standard modal behavior is "Close" or implicit save.
-                If read-only, we should probably hide "Save" or make it just "Close".
-                Let's make it "Close" if read-only.
-            */}
-            {canEdit || canAssign ? (
+            {(canEditDetails || canAssign || isAssignee) && !isTaskCompleted && (
               <Button size="sm" onClick={handleSave} className="rounded-lg px-6">
                 Save
-              </Button>
-            ) : (
-              <Button size="sm" variant="secondary" onClick={handleClose} className="rounded-lg px-6">
-                Close
               </Button>
             )}
           </div>

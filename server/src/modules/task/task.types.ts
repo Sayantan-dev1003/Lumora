@@ -5,6 +5,7 @@ export interface CreateTaskInput {
     description?: string;
     listId: string;
     assignedUserId?: string;
+    status?: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
 }
 
 export interface UpdateTaskInput {
@@ -13,6 +14,7 @@ export interface UpdateTaskInput {
     assignedUserId?: string;
     listId?: string;
     position?: number;
+    status?: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
 }
 
 export interface MoveTaskInput {

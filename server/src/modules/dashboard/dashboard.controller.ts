@@ -6,14 +6,15 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
     try {
         const userId = req.userId!;
 
-        // 1. Total Boards
+        // Total Boards
         const totalBoards = await prisma.board.count({
             where: {
                 members: { some: { userId } }
             }
         });
 
-        // 2. Total Tasks (Created by me OR Assigned to me)
+        // Total Tasks (Created by me OR Assigned to me)
+        // Total Tasks (Created by me OR Assigned to me / All tasks)
         const totalTasks = await prisma.task.count({
             where: {
                 OR: [
@@ -23,23 +24,29 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
             }
         });
 
-        // 4. Tasks Assigned to Me (All tasks assigned to current user)
-        const assignedToMe = await prisma.task.count({
-            where: { assignedUserId: userId }
-        });
-
-        // 5. Active Tasks (Assigned to me AND Not in "Done" lists)
-        const completed = await prisma.task.count({
+        // Completed Tasks (Created by me OR Assigned to me, AND isCompleted is true)
+        const completedTasks = await prisma.task.count({
             where: {
-                assignedUserId: userId,
-                list: {
-                    title: { in: ["Done", "Completed", "Finished", "Complete"] }
-                }
+                status: "DONE",
+                OR: [
+                    { creatorId: userId },
+                    { assignedUserId: userId }
+                ]
             }
         });
-        const activeTasks = assignedToMe - completed;
 
-        // 8. Recent Activity (Only my activities, max 3)
+        // Active Tasks (Created by me OR Assigned to me, AND isCompleted is false)
+        const activeTasks = await prisma.task.count({
+            where: {
+                status: { not: "DONE" },
+                OR: [
+                    { creatorId: userId },
+                    { assignedUserId: userId }
+                ]
+            }
+        });
+
+        // Recent Activity (Only my activities, max 3)
         const recentActivity = await prisma.activity.findMany({
             where: { userId },
             take: 3,
@@ -58,7 +65,7 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
             stats: {
                 totalBoards,
                 totalTasks,
-                assignedToMe,
+                completedTasks,
                 activeTasks
             },
             recentActivity

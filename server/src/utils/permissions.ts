@@ -13,12 +13,15 @@ export const canViewTask = (task: Task, userId: string, role: string): boolean =
 /**
  * Checks if a user can edit a specific task.
  * Admins can edit all tasks.
- * Members can ONLY edit tasks they created.
- * Members CANNOT edit tasks assigned to them if they didn't create them.
+ * Members can edit tasks they created.
+ * Members can also edit tasks assigned to them.
+ * Members can edit unassigned tasks.
  */
 export const canEditTask = (task: Task, userId: string, role: string): boolean => {
     if (role === "admin") return true;
     if (role === "member" && task.creatorId === userId) return true;
+    if (role === "member" && task.assignedUserId === userId) return true;
+    if (role === "member" && !task.assignedUserId) return true;
     return false;
 };
 

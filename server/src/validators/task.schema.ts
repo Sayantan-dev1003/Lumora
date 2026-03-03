@@ -10,6 +10,7 @@ export const createTaskSchema = z.object({
         priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
         dueDate: z.string().datetime().optional().nullable(),
         assignedUserId: uuidSchema.optional().nullable(),
+        status: z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']).optional(),
     }),
 });
 
@@ -23,8 +24,9 @@ export const updateTaskSchema = z.object({
         position: z.number().optional(),
         priority: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
         dueDate: z.string().datetime().optional().nullable(),
-        listId: uuidSchema.optional(), // For moving tasks between lists
+        listId: uuidSchema.optional(),
         assignedUserId: uuidSchema.optional().nullable(),
+        status: z.enum(['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']).optional(),
     }),
 });
 
