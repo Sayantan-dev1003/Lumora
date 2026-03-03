@@ -268,13 +268,18 @@ const Board = () => {
 
   return (
     <div className="h-full bg-background border-l border-border/40 flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-background to-background">
-      <BoardHeader title={board?.title || 'Board'} members={allMembers} />
+      <BoardHeader title={board?.title || 'Board'} members={allMembers} isCompleted={(board as any)?.isCompleted} />
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 md:p-6 scrollbar-thin scrollbar-thumb-border/40 scrollbar-track-transparent">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
           <div className="flex gap-6 items-start min-w-max h-full">
             {lists.map((list) => (
-              <ListColumn key={list.id} list={list} onAddTask={handleAddTask} />
+              <ListColumn
+                key={list.id}
+                list={list}
+                onAddTask={handleAddTask}
+                userRole={board?.members.find((m: BoardMember) => m.userId === currentUser?.id)?.role || 'member'}
+              />
             ))}
 
             {/* Add list - Only for admins */}

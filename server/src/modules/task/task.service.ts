@@ -26,7 +26,7 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
                 position: nextPosition,
                 assignedUserId: input.assignedUserId,
                 creatorId: userId,
-                status: input.status !== undefined ? input.status : "TODO",
+                status: "TODO",
             },
         });
 
@@ -292,7 +292,7 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
         const isAdmin = member.role === "admin";
         const isOnlyAssignee = isAssignee && !isCreator && !isAdmin;
 
-        // If the user is ONLY the assignee (not creator or admin), they can only update status, and they cannot set it to DONE
+        // If the user is ONLY the assignee (not creator or admin), they can only update status
         if (isOnlyAssignee) {
             if (
                 (input.title !== undefined && input.title !== existingTask.title) ||
@@ -303,13 +303,34 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
             ) {
                 throw new Error("Forbidden: As an assignee, you can only update the task status");
             }
+        }
 
-            if (input.status === 'DONE') {
-                throw new Error("Forbidden: As an assignee, you cannot mark this task as DONE. Please set it to IN_REVIEW.");
+        // Strict Status Transitions
+        if (input.status !== undefined && input.status !== (existingTask.status || 'TODO')) {
+            const oldStatus = existingTask.status || 'TODO';
+            const newStatus = input.status;
+
+            const hasAssignerPrivilege = isCreator || isAdmin;
+            const hasAssigneePrivilege = isAssignee;
+
+            if (oldStatus === 'TODO' && newStatus === 'IN_PROGRESS') {
+                if (!hasAssigneePrivilege) {
+                    throw new Error("Forbidden: Only the assignee can change status to 'In Progress'");
+                }
+            } else if (oldStatus === 'IN_PROGRESS' && newStatus === 'IN_REVIEW') {
+                if (!hasAssigneePrivilege) {
+                    throw new Error("Forbidden: Only the assignee can change status to 'In Review'");
+                }
+            } else if (oldStatus === 'IN_REVIEW' && newStatus === 'DONE') {
+                if (!hasAssignerPrivilege) {
+                    throw new Error("Forbidden: Only the assigner can change status to 'Done'");
+                }
+            } else {
+                throw new Error(`Forbidden: Invalid status transition from '${oldStatus}' to '${newStatus}'. Workflow must strictly be To Do -> In Progress -> In Review -> Done.`);
             }
         }
 
-        if (member.role === "member" && input.assignedUserId !== undefined) {
+        if (member.role === "member" && input.assignedUserId !== undefined && input.assignedUserId !== existingTask.assignedUserId) {
             throw new Error("Forbidden: Only admins can assign tasks");
         }
 

@@ -132,8 +132,32 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
         prisma.board.count({ where }),
     ]);
 
+    const boardsWithCompletedFlag = boards.map(board => {
+        let isCompleted = false;
+
+        let activeTaskCount = 0;
+        board.lists.forEach(list => {
+            activeTaskCount += list._count.tasks;
+        });
+
+        // total matched tasks assigned to user
+        let totalAssignedTaskCount = 0;
+        board.lists.forEach(list => {
+            totalAssignedTaskCount += list.tasks.length;
+        });
+
+        // If there are assigned tasks, check if they are all done. 
+        // Wait, the lists._count.tasks counts *any* task in the list that is not DONE.
+        // It's more accurate to count total tasks vs remaining tasks.
+        return {
+            ...board,
+            // we will override list later, but just keeping standard format
+            isCompleted: activeTaskCount === 0 && totalAssignedTaskCount > 0
+        };
+    });
+
     return {
-        boards,
+        boards: boardsWithCompletedFlag,
         pagination: {
             total,
             page,
@@ -178,7 +202,7 @@ export const getBoardById = async (boardId: string, userId: string) => {
 
     if (role === "admin") {
         // Return FULL board for admins
-        return await prisma.board.findUnique({
+        const board = await prisma.board.findUnique({
             where: { id: boardId },
             include: {
                 ...memberInclude,
@@ -205,6 +229,15 @@ export const getBoardById = async (boardId: string, userId: string) => {
                 },
             },
         });
+
+        if (!board) return null;
+
+        // Check if board is completed (all assigned tasks are done)
+        const isCompleted = board.lists.length > 0 && board.lists.every(list =>
+            list.tasks.length > 0 && list.tasks.every(task => task.status === "DONE")
+        );
+
+        return { ...board, isCompleted };
     } else {
         // Return FILTERED board for members
         // Prisma doesn't support filtering parent based on child condition easily in one go
@@ -256,7 +289,12 @@ export const getBoardById = async (boardId: string, userId: string) => {
         // detailed requirement: "See only lists that contain tasks assigned to them"
         board.lists = board.lists.filter(list => list.tasks.length > 0);
 
-        return board;
+        // Check if board is completed (all assigned tasks are done)
+        const isCompleted = board.lists.length > 0 && board.lists.every(list =>
+            list.tasks.length > 0 && list.tasks.every(task => task.status === "DONE")
+        );
+
+        return { ...board, isCompleted };
     }
 };
 

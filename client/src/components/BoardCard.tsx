@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ListTodo } from 'lucide-react';
+import { ListTodo, CheckCircle2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { getInitials } from '@/lib/utils';
 
@@ -38,7 +38,9 @@ const BoardCard = ({ board }: BoardCardProps) => {
         >
             <CardHeader className="pb-3 pt-5">
                 <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg font-semibold tracking-tight line-clamp-1">{board.title}</CardTitle>
+                    <CardTitle className="text-lg font-semibold tracking-tight line-clamp-1 flex items-center gap-2">
+                        {board.title}
+                    </CardTitle>
                     <div className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground whitespace-nowrap">
                         {formatDistanceToNow(new Date(board.updatedAt), { addSuffix: true })}
                     </div>
@@ -65,6 +67,15 @@ const BoardCard = ({ board }: BoardCardProps) => {
 
                     {/* Task Count (Assigned vs Total) */}
                     {(() => {
+                        if ((board as any).isCompleted) {
+                            return (
+                                <div className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md bg-green-500/10 text-green-500 border border-green-500/20 shadow-sm">
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                    <span>Completed</span>
+                                </div>
+                            );
+                        }
+
                         const assignedTaskCount = board.lists?.reduce((acc: number, list: any) => acc + (list.tasks?.length || 0), 0) || 0;
                         const totalTaskCount = board.lists?.reduce((acc: number, list: any) => acc + (list._count?.tasks || 0), 0) || 0;
                         const hasAssignedTasks = assignedTaskCount > 0;

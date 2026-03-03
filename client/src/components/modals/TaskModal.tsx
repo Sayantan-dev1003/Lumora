@@ -176,19 +176,45 @@ const TaskModal = ({ members, onDelete, onUpdate, userRole }: TaskModalProps) =>
 
           <div className="space-y-2 pt-2">
             <Label>Status</Label>
-            <Select value={status} onValueChange={setStatus} disabled={isReadOnlyDetails}>
+            <Select
+              value={status}
+              onValueChange={setStatus}
+              disabled={isTaskCompleted || (!canEditDetails && !isAssignee)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="TODO">To Do</SelectItem>
-                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                <SelectItem value="IN_REVIEW">In Review</SelectItem>
-                <SelectItem value="DONE" disabled={!isAdmin && !isCreator && isAssignee}>Done</SelectItem>
+                <SelectItem
+                  value="TODO"
+                  disabled={(task?.status || 'TODO') !== 'TODO'}
+                >
+                  To Do
+                </SelectItem>
+                <SelectItem
+                  value="IN_PROGRESS"
+                  disabled={!(((task?.status || 'TODO') === 'TODO' && isAssignee) || task?.status === 'IN_PROGRESS')}
+                >
+                  In Progress
+                </SelectItem>
+                <SelectItem
+                  value="IN_REVIEW"
+                  disabled={!((task?.status === 'IN_PROGRESS' && isAssignee) || task?.status === 'IN_REVIEW')}
+                >
+                  In Review
+                </SelectItem>
+                <SelectItem
+                  value="DONE"
+                  disabled={!((task?.status === 'IN_REVIEW' && (isAdmin || isCreator)) || task?.status === 'DONE')}
+                >
+                  Done
+                </SelectItem>
               </SelectContent>
             </Select>
-            {!isAdmin && !isCreator && isAssignee && (
-              <p className="text-xs text-muted-foreground mt-1">As an assignee, you can mark tasks up to "In Review".</p>
+            {(!isAdmin && !isCreator && isAssignee) && (
+              <p className="text-xs text-muted-foreground mt-1">
+                You can progress this task forward up to "In Review".
+              </p>
             )}
           </div>
 

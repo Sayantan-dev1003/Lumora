@@ -10,9 +10,10 @@ import type { List } from '@/types';
 interface ListColumnProps {
   list: List;
   onAddTask: (listId: string, title: string) => void;
+  userRole?: string;
 }
 
-const ListColumn = ({ list, onAddTask }: ListColumnProps) => {
+const ListColumn = ({ list, onAddTask, userRole = 'member' }: ListColumnProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
 
@@ -44,31 +45,33 @@ const ListColumn = ({ list, onAddTask }: ListColumnProps) => {
           </SortableContext>
         </div>
 
-        {isAdding ? (
-          <div className="mt-4 space-y-3 bg-background/40 p-2 rounded-xl border border-border/10 animate-in fade-in slide-in-from-top-2 duration-200">
-            <Input
-              autoFocus
-              placeholder="Enter task title..."
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setIsAdding(false); }}
-              className="rounded-lg text-sm bg-background/60 border-transparent focus:border-primary/20 shadow-none"
-            />
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleAdd} className="rounded-lg text-xs h-8 px-4">Add Card</Button>
-              <Button size="sm" variant="ghost" onClick={() => setIsAdding(false)} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50"><X className="h-4 w-4" /></Button>
+        {userRole === 'admin' && (
+          isAdding ? (
+            <div className="mt-4 space-y-3 bg-background/40 p-2 rounded-xl border border-border/10 animate-in fade-in slide-in-from-top-2 duration-200">
+              <Input
+                autoFocus
+                placeholder="Enter task title..."
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setIsAdding(false); }}
+                className="rounded-lg text-sm bg-background/60 border-transparent focus:border-primary/20 shadow-none"
+              />
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleAdd} className="rounded-lg text-xs h-8 px-4">Add Card</Button>
+                <Button size="sm" variant="ghost" onClick={() => setIsAdding(false)} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50"><X className="h-4 w-4" /></Button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsAdding(true)}
-            className="mt-4 w-full justify-start text-muted-foreground hover:text-primary hover:bg-background/40 h-10 rounded-xl transition-all duration-200 group"
-          >
-            <Plus className="h-4 w-4 mr-2 group-hover:bg-primary/10 rounded-full p-0.5 box-content transition-colors" />
-            <span className="font-medium">Add a card</span>
-          </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsAdding(true)}
+              className="mt-4 w-full justify-start text-muted-foreground hover:text-primary hover:bg-background/40 h-10 rounded-xl transition-all duration-200 group"
+            >
+              <Plus className="h-4 w-4 mr-2 group-hover:bg-primary/10 rounded-full p-0.5 box-content transition-colors" />
+              <span className="font-medium">Add a task</span>
+            </Button>
+          )
         )}
       </div>
     </div>

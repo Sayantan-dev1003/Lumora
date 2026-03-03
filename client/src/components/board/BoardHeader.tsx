@@ -5,14 +5,20 @@ import { getInitials } from '@/lib/utils';
 interface BoardHeaderProps {
   title: string;
   members: User[];
+  isCompleted?: boolean;
 }
 
-const BoardHeader = ({ title, members }: BoardHeaderProps) => {
+const BoardHeader = ({ title, members, isCompleted }: BoardHeaderProps) => {
   return (
     <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border/40 bg-background/60 backdrop-blur-xl sticky top-0 z-10 transition-all duration-300">
       <div className="flex items-center gap-4">
-        <div>
+        <div className="flex items-center gap-3">
           <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">{title}</h1>
+          {isCompleted && (
+            <span className="text-xs bg-green-500/20 text-green-500 border border-green-500/30 px-2.5 py-0.5 rounded-full font-medium tracking-wide shadow-sm flex-shrink-0">
+              Completed
+            </span>
+          )}
         </div>
       </div>
 

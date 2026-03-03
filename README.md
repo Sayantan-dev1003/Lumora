@@ -18,12 +18,15 @@ Lumora empowers users to create boards, manage task lists, and collaborate with 
 
 - **Real-Time Collaboration**: Instant updates across all connected clients using Socket.io.
 - **Secure Authentication**: Robust cookie-based JWT authentication with HTTP-only security.
-- **Board Management**: Create, organize, and manage multiple boards with granular access control.
-- **Drag & Drop Workflow**: Intuitive drag-and-drop interface for reordering tasks and moving them between lists.
+- **Board Management & Tracking**: Create, organize, and manage multiple boards. Automatically tracks and displays "Completed" status when all associated tasks are finished.
+- **Advanced Task Workflow**: Intuitive drag-and-drop interface for tasks. Includes a two-step review process with "IN_REVIEW" status and role-based permissions for marking tasks as "DONE".
 - **Activity Tracking**: Detailed audit logs for every action taken on a board.
 - **Optimistic UI**: responsive interface that updates immediately for a smooth user experience.
 - **Dashboard Analytics**: insightful statistics on task completion and project progress.
-- **Responsive Design**: Fully responsive UI built with Tailwind CSS and Shadcn UI.
+- **Responsive & Themed Design**: Fully responsive UI built with Tailwind CSS and Shadcn UI, featuring seamless dark and light mode support.
+- **Two-Step Task Review**: Replaced simple boolean completion with dynamic task statuses, introducing an "IN_REVIEW" state and enforcing role-based (Assigner/Admin) review before tasks are marked as "DONE".
+- **Board Completion Tracking**: Implemented automated computation and display of board completion based on the statuses of its associated tasks.
+- **Dashboard Statistics Fix**: Updated the dashboard analytics logic to correctly aggregate and calculate progress metrics utilizing the new task status model.
 
 ##  Tech Stack
 

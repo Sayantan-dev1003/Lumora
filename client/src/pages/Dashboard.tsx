@@ -50,7 +50,7 @@ const Dashboard = () => {
     },
   });
 
-  const filtered = boards.filter((b: any) => b.title?.toLowerCase().includes(search.toLowerCase()));
+  const filtered = boards.filter((b: any) => !b.isCompleted && b.title?.toLowerCase().includes(search.toLowerCase()));
 
 
   return (

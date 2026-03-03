@@ -42,6 +42,7 @@ export interface Board {
   members: BoardMember[];
   lists: List[];
   createdAt: string;
+  isCompleted?: boolean;
 }
 
 export interface BoardSummary {
