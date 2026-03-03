@@ -11,8 +11,8 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 
         res.cookie(COOKIE_NAME, token, {
             httpOnly: true,
-            secure: IS_PRODUCTION,
-            sameSite: 'lax',
+            secure: true,
+            sameSite: 'none',
             maxAge: COOKIE_MAX_AGE,
         });
 
@@ -31,8 +31,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
         res.cookie(COOKIE_NAME, token, {
             httpOnly: true,
-            secure: IS_PRODUCTION,
-            sameSite: 'lax',
+            secure: true,
+            sameSite: 'none',
             maxAge: COOKIE_MAX_AGE,
         });
 
@@ -46,7 +46,11 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 export const logout = (req: Request, res: Response) => {
-    res.clearCookie(COOKIE_NAME);
+    res.clearCookie(COOKIE_NAME, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+    });
     res.status(200).json({
         success: true,
         message: 'Logged out successfully',

@@ -9,7 +9,7 @@ const adapter = new PrismaNeon({
 const prisma = new PrismaClient({
   adapter,
   log:
-    NODE_ENV === "development"
+    NODE_ENV === "production"
       ? ["warn", "error"]
       : ["error"],
 });

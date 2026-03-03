@@ -22,7 +22,7 @@ app.use(cors({
 }));
 app.use(helmet());
 app.use(morgan("dev"));
-if (process.env.NODE_ENV !== "test") {
+if (process.env.NODE_ENV !== "production") {
   app.use(globalLimiter);
 }
 app.use(express.json({ limit: "10kb" }));
@@ -35,7 +35,7 @@ app.use("/api/boards", boardRoutes);
 app.use("/api/lists", listRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/activity", activityRoutes); // Global activity
+app.use("/api/activity", activityRoutes);
 
 
 app.get("/health", (_req, res) => {

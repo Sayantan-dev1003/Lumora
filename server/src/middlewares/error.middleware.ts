@@ -27,7 +27,7 @@ export const errorHandler = (
         path: req.path,
         method: req.method,
         userId: req.userId,
-        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+        stack: process.env.NODE_ENV === 'production' ? err.stack : undefined,
         code: err.code, // Log Prisma error code if present
         statusCode
     });

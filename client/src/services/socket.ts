@@ -10,7 +10,7 @@ export const connectSocket = (): Socket => {
     socket = io(SOCKET_URL, {
       withCredentials: true,
       autoConnect: true,
-      transports: ['websocket']
+      transports: ['polling','websocket']
     });
   }
   if (!socket.connected) socket.connect();
@@ -34,12 +34,7 @@ export const joinBoard = (boardId: string) => {
 };
 
 export const leaveBoard = (boardId: string) => {
-  // Optional: emit leave_board if backend supports it, or just disconnect on unmount if exclusive
-  // For now, just do nothing or emit if backend had leave logic (which I didn't implement, but easy to add)
-  // Backend only joins. Socket.io auto-leaves on disconnect.
-  // But explicit leave is good for SPA navigation without disconnect.
-  // I didn't implement leave_board in backend.
-  // But standard is usually fine.
+  socket?.emit('leave_board', { boardId });
 };
 
 // Event Listeners

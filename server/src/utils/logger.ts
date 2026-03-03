@@ -16,7 +16,7 @@ export const logger = {
         }));
     },
     debug: (message: string, meta?: any) => {
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === 'production') {
             console.debug(JSON.stringify({
                 level: 'debug',
                 timestamp: new Date().toISOString(),

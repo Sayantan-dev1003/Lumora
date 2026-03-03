@@ -9,7 +9,7 @@ let io: Server;
 export const initSocket = (httpServer: http.Server) => {
   io = new Server(httpServer, {
     cors: {
-      origin: CLIENT_URL, // Use configurable client URL
+      origin: CLIENT_URL,
       credentials: true,
     },
   });
