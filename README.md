@@ -188,18 +188,6 @@ The database schema is designed for relational integrity and efficiency:
 2.  **Soft Deletes**: Currently, deletions (boards, lists, tasks) are hard deletes. In a production enterprise environment, we would implementation soft deletes (archiving) to prevent data loss.
 3.  **Authentication**: We use simple email/password auth. OAuth (Google/GitHub) would be a future enhancement for better onboarding.
 
-## 💾 Demo Credentials
-
-You can use the following credentials to test the application quickly:
-
-**User 1:**
--   **Email**: `sayantanhalder78@gmail.com`
--   **Password**: `123456`
-
-**User 2:**
--   **Email**: `Sayantan.Halder.23co@iitram.ac.in`
--   **Password**: `123456`
-
 ## 📦 Installation & Setup
 
 ### Prerequisites
@@ -243,7 +231,7 @@ cp .env.example .env
 npm run dev
 ```
 
-The application should now be running at `http://localhost:8080` (frontend) and communicating with `http://localhost:3000` (backend).
+The application should now be running at `http://localhost:5173` (frontend) and communicating with `http://localhost:5000` (backend).
 
 ## 🤝 Contributing
 
