@@ -49,28 +49,32 @@ const TaskCard = ({ task }: TaskCardProps) => {
           <p className={cn("text-sm font-medium leading-normal text-card-foreground line-clamp-2", task.status === 'DONE' && "text-muted-foreground line-through")}>{task.title}</p>
         </div>
 
-        {(task.description || task.assignedUser) && (
-          <div className="flex items-center justify-between mt-1 min-h-[1.25rem]">
-            {task.description ? (
-              <p className="text-xs text-muted-foreground/70 truncate max-w-[80%]">
+        {(task.description || task.assignedUser || (task.status !== 'TODO' && task.status !== 'DONE')) && (
+          <div className="flex flex-col gap-1 mt-1">
+            {task.description && (
+              <p className="text-xs text-muted-foreground/70 truncate">
                 {task.description}
               </p>
-            ) : <div />}
+            )}
 
-            {task.status !== 'TODO' && task.status !== 'DONE' && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted rounded-md text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                {task.status.replace('_', ' ')}
+            <div className="flex items-center justify-between gap-2 mt-1.5">
+              <div>
+                {task.status !== 'TODO' && task.status !== 'DONE' && (
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted rounded-md text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {task.status.replace('_', ' ')}
+                  </div>
+                )}
               </div>
-            )}
 
-            {task.assignedUser && (
-              <Avatar className="h-5 w-5 border border-background">
-                <AvatarImage src={task.assignedUser.avatar} />
-                <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
-                  {getInitials(task.assignedUser.name)}
-                </AvatarFallback>
-              </Avatar>
-            )}
+              {task.assignedUser && (
+                <Avatar className="h-5 w-5 border border-background shrink-0">
+                  <AvatarImage src={task.assignedUser.avatar} />
+                  <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
+                    {getInitials(task.assignedUser.name)}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+            </div>
           </div>
         )}
       </div>
