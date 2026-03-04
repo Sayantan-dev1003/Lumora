@@ -13,7 +13,8 @@ import TaskModal from '@/components/modals/TaskModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Plus, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Plus, X, AlertTriangle } from 'lucide-react';
 import type { List, Task, BoardMember, Board as BoardType } from '@/types';
 
 const Board = () => {
@@ -22,6 +23,7 @@ const Board = () => {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [addingList, setAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; type: 'board' | 'list' | null; id: string | null; isDeleting: boolean }>({ isOpen: false, type: null, id: null, isDeleting: false });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -231,25 +233,32 @@ const Board = () => {
   };
 
   const handleDeleteList = async (listId: string) => {
-    if (window.confirm('Are you sure you want to delete this list?')) {
-      try {
-        await deleteList(listId);
-      } catch (error) {
-        toast.error("Failed to delete list");
-      }
-    }
+    setDeleteModal({ isOpen: true, type: 'list', id: listId, isDeleting: false });
   };
 
   const handleDeleteBoard = async () => {
     if (!boardId) return;
-    if (window.confirm('Are you sure you want to delete this board? This action cannot be undone.')) {
-      try {
-        await deleteBoard(boardId);
+    setDeleteModal({ isOpen: true, type: 'board', id: boardId, isDeleting: false });
+  };
+
+  const confirmDelete = async () => {
+    const { type, id } = deleteModal;
+    if (!id || !type) return;
+
+    setDeleteModal(prev => ({ ...prev, isDeleting: true }));
+
+    try {
+      if (type === 'list') {
+        await deleteList(id);
+      } else if (type === 'board') {
+        await deleteBoard(id);
         toast.success("Board deleted");
         navigate('/');
-      } catch (error) {
-        toast.error("Failed to delete board");
       }
+      setDeleteModal({ isOpen: false, type: null, id: null, isDeleting: false });
+    } catch (error) {
+      toast.error(`Failed to delete ${type}`);
+      setDeleteModal(prev => ({ ...prev, isDeleting: false }));
     }
   };
 
@@ -364,6 +373,29 @@ const Board = () => {
         onUpdate={handleUpdateTask}
         userRole={board?.members.find((m: BoardMember) => m.userId === currentUser?.id)?.role || 'member'}
       />
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModal.isOpen} onOpenChange={(open) => !open && setDeleteModal({ isOpen: false, type: null, id: null, isDeleting: false })}>
+        <DialogContent className="rounded-xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete {deleteModal.type === 'board' ? 'Board' : 'List'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-muted-foreground text-sm">
+            Are you sure you want to delete this {deleteModal.type}? This action cannot be undone and will permanently remove all associated data.
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" className="rounded-xl" onClick={() => setDeleteModal({ isOpen: false, type: null, id: null, isDeleting: false })}>
+              Cancel
+            </Button>
+            <Button variant="destructive" className="rounded-xl" onClick={confirmDelete} disabled={deleteModal.isDeleting}>
+              {deleteModal.isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
