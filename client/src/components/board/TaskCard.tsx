@@ -57,7 +57,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
               </p>
             )}
 
-            <div className="flex items-center justify-between gap-2 mt-1.5">
+            <div className="flex items-end gap-2 mt-1.5">
               <div>
                 {task.status !== 'TODO' && task.status !== 'DONE' && (
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted rounded-md text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
