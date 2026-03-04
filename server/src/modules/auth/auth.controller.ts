@@ -3,7 +3,7 @@ import * as authService from './auth.service';
 
 const COOKIE_NAME = 'token';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+const COOKIE_MAX_AGE = 1 * 24 * 60 * 60 * 1000;
 
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
     try {
