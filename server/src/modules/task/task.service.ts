@@ -82,6 +82,13 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
             }
         }
 
+        if (boardId) {
+            await tx.board.update({
+                where: { id: boardId },
+                data: { lastActivityAt: new Date() }
+            });
+        }
+
         return { task, boardId, assignedUserId: input.assignedUserId, newMemberAdded };
     });
 
@@ -239,6 +246,13 @@ export const moveTask = async (taskId: string, userId: string, input: MoveTaskIn
             } catch (e) {
                 console.error("Failed to log activity", e);
             }
+        }
+
+        if (finalBoardId) {
+            await tx.board.update({
+                where: { id: finalBoardId },
+                data: { lastActivityAt: new Date() }
+            });
         }
 
         return { task: savedTask, boardId: finalBoardId };
@@ -527,6 +541,13 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                 status: input.status !== undefined ? input.status : existingTask.status,
             },
         });
+
+        if (boardId) {
+            await tx.board.update({
+                where: { id: boardId },
+                data: { lastActivityAt: new Date() }
+            });
+        }
 
         return { updatedTask, boardId, newMemberAdded, newAssignedUserId: input.assignedUserId, removedMemberId };
     });

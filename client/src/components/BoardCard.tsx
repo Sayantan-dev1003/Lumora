@@ -17,6 +17,7 @@ interface BoardCardProps {
         id: string;
         title: string;
         updatedAt: string;
+        lastActivityAt?: string;
         members?: Array<{
             user: {
                 id: string;
@@ -67,7 +68,7 @@ const BoardCard = ({ board }: BoardCardProps) => {
                         </CardTitle>
                         <div className="flex items-center gap-1.5 shrink-0">
                             <div className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground whitespace-nowrap">
-                                {formatDistanceToNow(new Date(board.updatedAt), { addSuffix: true })}
+                                Last activity: {formatDistanceToNow(new Date(board.lastActivityAt || board.updatedAt), { addSuffix: true })}
                             </div>
                             {/* {currentUser?.id === board.owner?.id && (
                                 <Button

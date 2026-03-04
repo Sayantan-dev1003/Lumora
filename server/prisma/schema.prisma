@@ -30,6 +30,7 @@ model Board {
   ownerId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  lastActivityAt DateTime @default(now())
 
   owner      User          @relation("Owner", fields: [ownerId], references: [id])
   members    BoardMember[]

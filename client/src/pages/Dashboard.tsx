@@ -23,7 +23,7 @@ const Dashboard = () => {
 
   const { data: boardsData, isLoading: boardsLoading } = useQuery({
     queryKey: ['boards', page],
-    queryFn: () => fetchBoards(page, 6),
+    queryFn: () => fetchBoards(page, 4),
   });
 
   const { data: statsData, isLoading: statsLoading } = useQuery({
@@ -34,7 +34,7 @@ const Dashboard = () => {
   const boards = boardsData?.boards || [];
   const pagination = boardsData?.total ? {
     page: page,
-    totalPages: Math.ceil(boardsData.total / 6)
+    totalPages: Math.ceil(boardsData.total / 4)
   } : { page: 1, totalPages: 1 };
 
   const stats = statsData?.stats;
@@ -82,7 +82,7 @@ const Dashboard = () => {
         {/* Boards List */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Your Boards</h2>
+            <h2 className="text-xl font-semibold">Recent Boards</h2>
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input

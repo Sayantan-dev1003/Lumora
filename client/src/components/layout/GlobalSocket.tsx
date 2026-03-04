@@ -15,15 +15,10 @@ const GlobalSocket = () => {
 
         const handleMemberRemoved = ({ boardId, userId }: { boardId: string, userId: string }) => {
             if (user.id === userId) {
-                // If the user was kicked from a board they are NOT currently viewing,
-                // we just need to invalidate their boards list so it disappears.
-                // (If they are reviewing the board, Board.tsx handles the kick & navigation).
                 queryClient.invalidateQueries({ queryKey: ['boards'] });
                 toast.info("You've been removed from a board or have no remaining tasks on it.");
             }
         };
-
-        // We listen globally
         socket.on('member_removed', handleMemberRemoved);
 
         return () => {

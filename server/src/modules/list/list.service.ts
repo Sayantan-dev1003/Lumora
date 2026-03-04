@@ -41,6 +41,13 @@ export const createList = async (userId: string, input: CreateListInput) => {
             entityId: list.id
         }, tx);
 
+        if (input.boardId) {
+            await tx.board.update({
+                where: { id: input.boardId },
+                data: { lastActivityAt: new Date() }
+            });
+        }
+
         return { list, boardId: input.boardId };
     });
 
@@ -134,6 +141,13 @@ export const updateList = async (listId: string, userId: string, input: UpdateLi
             entityType: "list",
             entityId: listId
         }, tx);
+
+        if (existingList.boardId) {
+            await tx.board.update({
+                where: { id: existingList.boardId },
+                data: { lastActivityAt: new Date() }
+            });
+        }
 
         return { updatedList, boardId: existingList.boardId };
     });

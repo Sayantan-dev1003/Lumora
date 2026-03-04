@@ -90,7 +90,7 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
             skip,
             take: limit,
             orderBy: {
-                updatedAt: "desc",
+                lastActivityAt: "desc",
             },
             include: {
                 owner: {

@@ -2,19 +2,25 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchBoards } from '@/services/api';
 import { Input } from '@/components/ui/input';
-import { Search, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import BoardCard from '@/components/BoardCard';
 
 const AssignedToMe = () => {
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
 
     // Fetch Boards I am a member of (Assigned)
     const { data: boardsData, isLoading } = useQuery({
-        queryKey: ['boards', 'member'],
-        queryFn: () => fetchBoards(1, 100, 'member'),
+        queryKey: ['boards', 'member', page],
+        queryFn: () => fetchBoards(page, 9, 'member'),
     });
 
     const allBoards = boardsData?.boards || [];
+    const pagination = boardsData?.total ? {
+        page: page,
+        totalPages: Math.ceil(boardsData.total / 9)
+    } : { page: 1, totalPages: 1 };
 
     // Filter boards based on search
     const filteredBoards = allBoards.filter((b: any) =>
@@ -52,11 +58,40 @@ const AssignedToMe = () => {
                             <p className="text-muted-foreground">You are not a member of any boards yet.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredBoards.map((board: any) => (
-                                <BoardCard key={board.id} board={board} />
-                            ))}
-                        </div>
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {filteredBoards.map((board: any) => (
+                                    <BoardCard key={board.id} board={board} />
+                                ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {pagination.totalPages > 1 && (
+                                <div className="flex items-center justify-end gap-2 mt-4">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-8 w-8 rounded-lg"
+                                        disabled={page <= 1}
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <span className="text-sm text-muted-foreground">
+                                        Page {page} of {pagination.totalPages}
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-8 w-8 rounded-lg"
+                                        disabled={page >= pagination.totalPages}
+                                        onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             )}
