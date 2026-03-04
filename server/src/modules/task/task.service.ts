@@ -431,6 +431,7 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
 
         // Handle assignment change logging & Auto-Membership
         let newMemberAdded = false;
+        let removedMemberId: string | null = null;
 
         if (input.assignedUserId !== undefined && input.assignedUserId !== existingTask.assignedUserId) {
 
@@ -478,6 +479,40 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                     }, undefined);
                 } catch (e) { console.error("[updateTask] Failed to log task_unassigned:", e); }
             }
+            if (existingTask.assignedUserId && boardId) {
+                // Check if old assignee has any remaining tasks on the board
+                const remainingTasks = await tx.task.count({
+                    where: {
+                        list: { boardId },
+                        assignedUserId: existingTask.assignedUserId,
+                        id: { not: taskId } // Exclude the task currently being updated
+                    }
+                });
+
+                if (remainingTasks === 0) {
+                    const oldMember = await tx.boardMember.findUnique({
+                        where: {
+                            boardId_userId: {
+                                boardId,
+                                userId: existingTask.assignedUserId
+                            }
+                        }
+                    });
+
+                    // Remove if they are just a 'member'
+                    if (oldMember && oldMember.role === 'member') {
+                        await tx.boardMember.delete({
+                            where: {
+                                boardId_userId: {
+                                    boardId,
+                                    userId: existingTask.assignedUserId
+                                }
+                            }
+                        });
+                        removedMemberId = existingTask.assignedUserId;
+                    }
+                }
+            }
         }
 
 
@@ -493,7 +528,7 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
             },
         });
 
-        return { updatedTask, boardId, newMemberAdded, newAssignedUserId: input.assignedUserId };
+        return { updatedTask, boardId, newMemberAdded, newAssignedUserId: input.assignedUserId, removedMemberId };
     });
 
     if (result.boardId) {
@@ -513,6 +548,13 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                     member: { user, role: 'member' }
                 });
             }
+        }
+
+        if (result.removedMemberId) {
+            getIO().to(result.boardId).emit("member_removed", {
+                boardId: result.boardId,
+                userId: result.removedMemberId
+            });
         }
     }
 
@@ -567,11 +609,54 @@ export const deleteTask = async (taskId: string, userId: string) => {
                 entityId: taskId
             }, tx);
         }
-        return { boardId: list?.boardId, task };
+
+        let removedMemberId: string | null = null;
+
+        if (task.assignedUserId && list?.boardId) {
+            const remainingTasks = await tx.task.count({
+                where: {
+                    list: { boardId: list.boardId },
+                    assignedUserId: task.assignedUserId,
+                    id: { not: taskId }
+                }
+            });
+
+            if (remainingTasks === 0) {
+                const oldMember = await tx.boardMember.findUnique({
+                    where: {
+                        boardId_userId: {
+                            boardId: list.boardId,
+                            userId: task.assignedUserId
+                        }
+                    }
+                });
+
+                if (oldMember && oldMember.role === 'member') {
+                    await tx.boardMember.delete({
+                        where: {
+                            boardId_userId: {
+                                boardId: list.boardId,
+                                userId: task.assignedUserId
+                            }
+                        }
+                    });
+                    removedMemberId = task.assignedUserId;
+                }
+            }
+        }
+
+        return { boardId: list?.boardId, task, removedMemberId };
     });
 
     if (result && result.boardId && result.task) {
         await emitToBoardSecurely(result.boardId, "task_deleted", { taskId }, "task", result.task);
+
+        if (result.removedMemberId) {
+            getIO().to(result.boardId).emit("member_removed", {
+                boardId: result.boardId,
+                userId: result.removedMemberId
+            });
+        }
     }
 };
 

@@ -10,7 +10,7 @@ export const connectSocket = (): Socket => {
     socket = io(SOCKET_URL, {
       withCredentials: true,
       autoConnect: true,
-      transports: ['polling','websocket']
+      transports: ['polling', 'websocket']
     });
   }
   if (!socket.connected) socket.connect();
@@ -25,7 +25,11 @@ export const disconnectSocket = () => {
 };
 
 export const onMemberAdded = (callback: (data: { boardId: string, member: any }) => void) => {
-  socket.on('member_added', callback);
+  socket?.on('member_added', callback);
+};
+
+export const onMemberRemoved = (callback: (data: { boardId: string, userId: string }) => void) => {
+  socket?.on('member_removed', callback);
 };
 
 export const joinBoard = (boardId: string) => {

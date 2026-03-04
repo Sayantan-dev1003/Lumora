@@ -10,6 +10,7 @@ import Activity from '@/pages/Activity';
 import Settings from '@/pages/Settings';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import BoardLayout from '@/components/layout/BoardLayout';
+import GlobalSocket from '@/components/layout/GlobalSocket';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -29,7 +30,7 @@ const AppRoutes = () => (
     <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
     {/* Wrapped Routes with Sidebar Layout */}
-    <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+    <Route element={<ProtectedRoute><><GlobalSocket /><DashboardLayout /></></ProtectedRoute>}>
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/assigned" element={<AssignedToMe />} />
       <Route path="/created" element={<CreatedByMe />} />

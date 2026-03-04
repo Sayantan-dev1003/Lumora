@@ -5,7 +5,7 @@ import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useS
 import { arrayMove } from '@dnd-kit/sortable';
 import { fetchBoard, createList, createTask, updateTask, moveTaskApi, deleteTask, deleteBoard, deleteList } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
-import { joinBoard, leaveBoard, onTaskCreated, onTaskUpdated, onTaskDeleted, onListCreated, onListUpdated, onListDeleted, onActivityCreated, getSocket, onMemberAdded } from '@/services/socket';
+import { joinBoard, leaveBoard, onTaskCreated, onTaskUpdated, onTaskDeleted, onListCreated, onListUpdated, onListDeleted, onActivityCreated, getSocket, onMemberAdded, onMemberRemoved } from '@/services/socket';
 import { toast } from 'sonner';
 import BoardHeader from '@/components/board/BoardHeader';
 import ListColumn from '@/components/board/ListColumn';
@@ -113,12 +113,29 @@ const Board = () => {
         toast.success(`${member.user.name} added to board`);
       };
 
+      const handleMemberRemoved = ({ userId }: { userId: string }) => {
+        if (currentUser?.id === userId) {
+          toast.error("You are no longer a member of this board");
+          navigate('/');
+        } else {
+          queryClient.setQueryData(['board', boardId], (oldData: BoardType | undefined) => {
+            if (!oldData) return oldData;
+            return {
+              ...oldData,
+              members: oldData.members.filter((m: BoardMember) => m.userId !== userId)
+            };
+          });
+        }
+      };
+
       onTaskCreated(handleTaskCreated);
       onTaskUpdated(handleTaskUpdated);
       onTaskDeleted(handleTaskDeleted);
       onListCreated(handleListCreated);
       onListUpdated(handleListUpdated);
       onListDeleted(handleListDeleted);
+      onMemberAdded(handleMemberAdded);
+      onMemberRemoved(handleMemberRemoved);
 
       return () => {
         leaveBoard(boardId);
@@ -130,6 +147,7 @@ const Board = () => {
         socket?.off('list_updated', handleListUpdated);
         socket?.off('list_deleted', handleListDeleted);
         socket?.off('member_added', handleMemberAdded);
+        socket?.off('member_removed', handleMemberRemoved);
       };
     }
   }, [boardId]);

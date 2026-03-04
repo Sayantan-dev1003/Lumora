@@ -69,7 +69,7 @@ const BoardCard = ({ board }: BoardCardProps) => {
                             <div className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground whitespace-nowrap">
                                 {formatDistanceToNow(new Date(board.updatedAt), { addSuffix: true })}
                             </div>
-                            {currentUser?.id === board.owner?.id && (
+                            {/* {currentUser?.id === board.owner?.id && (
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -81,7 +81,7 @@ const BoardCard = ({ board }: BoardCardProps) => {
                                 >
                                     <Trash2 className="h-3.5 w-3.5" />
                                 </Button>
-                            )}
+                            )} */}
                         </div>
                     </div>
                 </CardHeader>
