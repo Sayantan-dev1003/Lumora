@@ -1,12 +1,27 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchBoards } from '@/services/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchBoards, createBoard } from '@/services/api';
 import { Input } from '@/components/ui/input';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import BoardCard from '@/components/BoardCard';
 
 const CreatedByMe = () => {
     const [search, setSearch] = useState('');
+    const [createOpen, setCreateOpen] = useState(false);
+    const [newTitle, setNewTitle] = useState('');
+    const queryClient = useQueryClient();
+
+    const createMutation = useMutation({
+        mutationFn: (title: string) => createBoard(title),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['boards'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            setCreateOpen(false);
+            setNewTitle('');
+        },
+    });
 
     // Fetch Boards Created by Me
     const { data: boardsData, isLoading } = useQuery({
@@ -30,14 +45,19 @@ const CreatedByMe = () => {
                     </h1>
                     <p className="text-muted-foreground">Manage boards you created and collaborate on others.</p>
                 </div>
-                <div className="relative w-full sm:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search Boards..."
-                        className="pl-9 h-10 rounded-xl"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-72">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search Boards..."
+                            className="pl-9 h-10 rounded-xl"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <Button onClick={() => setCreateOpen(true)} className="w-full sm:w-auto rounded-xl gap-2 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5" size="lg">
+                        <Plus className="h-5 w-5" /> New Board
+                    </Button>
                 </div>
             </div>
 
@@ -60,6 +80,28 @@ const CreatedByMe = () => {
                     )}
                 </div>
             )}
+
+            {/* Create Board Dialog */}
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+                <DialogContent className="rounded-xl">
+                    <DialogHeader>
+                        <DialogTitle>Create New Board</DialogTitle>
+                    </DialogHeader>
+                    <Input
+                        placeholder="Board title"
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                        className="rounded-xl"
+                        onKeyDown={(e) => e.key === 'Enter' && newTitle.trim() && createMutation.mutate(newTitle.trim())}
+                    />
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setCreateOpen(false)} className="rounded-xl">Cancel</Button>
+                        <Button onClick={() => newTitle.trim() && createMutation.mutate(newTitle.trim())} disabled={!newTitle.trim() || createMutation.isPending} className="rounded-xl">
+                            {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
