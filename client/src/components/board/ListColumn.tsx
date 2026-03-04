@@ -32,15 +32,10 @@ const ListColumn = ({ list, onAddTask, onDeleteList, userRole = 'member', curren
 
   return (
     <div className="flex-shrink-0 w-80">
-      <div className="bg-muted/30 hover:bg-muted/40 transition-colors duration-300 rounded-2xl p-4 flex flex-col max-h-[calc(100vh-10rem)] border border-white/5 shadow-sm backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-4 px-1 group">
+      <div className="group bg-muted/30 hover:bg-muted/40 transition-colors duration-300 rounded-2xl p-4 flex flex-col max-h-[calc(100vh-10rem)] border border-white/5 shadow-sm backdrop-blur-sm relative">
+        <div className="flex items-center justify-between mb-4 px-1">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-base text-foreground tracking-tight">{list.title}</h3>
-            {(list.creatorId === currentUser?.id || boardOwnerId === currentUser?.id) && onDeleteList && (
-              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive" onClick={() => onDeleteList(list.id)}>
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            )}
           </div>
           <span className="text-xs font-medium text-muted-foreground bg-background/50 px-2.5 py-1 rounded-full border border-border/10">
             {list.tasks.length}
@@ -55,34 +50,47 @@ const ListColumn = ({ list, onAddTask, onDeleteList, userRole = 'member', curren
           </SortableContext>
         </div>
 
-        {userRole === 'admin' && (
-          isAdding ? (
-            <div className="mt-4 space-y-3 bg-background/40 p-2 rounded-xl border border-border/10 animate-in fade-in slide-in-from-top-2 duration-200">
-              <Input
-                autoFocus
-                placeholder="Enter task title..."
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setIsAdding(false); }}
-                className="rounded-lg text-sm bg-background/60 border-transparent focus:border-primary/20 shadow-none"
-              />
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={handleAdd} className="rounded-lg text-xs h-8 px-4">Add Card</Button>
-                <Button size="sm" variant="ghost" onClick={() => setIsAdding(false)} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50"><X className="h-4 w-4" /></Button>
+        <div className="mt-4 flex items-end justify-between gap-2">
+          {userRole === 'admin' ? (
+            isAdding ? (
+              <div className="flex-1 space-y-3 bg-background/40 p-2 rounded-xl border border-border/10 animate-in fade-in slide-in-from-top-2 duration-200">
+                <Input
+                  autoFocus
+                  placeholder="Enter task title..."
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); if (e.key === 'Escape') setIsAdding(false); }}
+                  className="rounded-lg text-sm bg-background/60 border-transparent focus:border-primary/20 shadow-none"
+                />
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={handleAdd} className="rounded-lg text-xs h-8 px-4">Add Card</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setIsAdding(false)} className="h-8 w-8 p-0 rounded-lg hover:bg-background/50"><X className="h-4 w-4" /></Button>
+                </div>
               </div>
-            </div>
-          ) : (
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsAdding(true)}
+                className="flex-1 justify-start text-muted-foreground hover:text-primary hover:bg-background/40 h-10 rounded-xl transition-all duration-200 group/btn"
+              >
+                <Plus className="h-4 w-4 mr-2 group-hover/btn:bg-primary/10 rounded-full p-0.5 box-content transition-colors" />
+                <span className="font-medium">Add a task</span>
+              </Button>
+            )
+          ) : <div className="flex-1" />}
+
+          {(list.creatorId === currentUser?.id || boardOwnerId === currentUser?.id) && onDeleteList && (
             <Button
               variant="ghost"
-              size="sm"
-              onClick={() => setIsAdding(true)}
-              className="mt-4 w-full justify-start text-muted-foreground hover:text-primary hover:bg-background/40 h-10 rounded-xl transition-all duration-200 group"
+              size="icon"
+              className="h-9 w-9 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive shrink-0"
+              onClick={() => onDeleteList(list.id)}
             >
-              <Plus className="h-4 w-4 mr-2 group-hover:bg-primary/10 rounded-full p-0.5 box-content transition-colors" />
-              <span className="font-medium">Add a task</span>
+              <Trash2 className="h-4 w-4" />
             </Button>
-          )
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
