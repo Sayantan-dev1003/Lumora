@@ -11,7 +11,7 @@ export interface CreateTaskInput {
 export interface UpdateTaskInput {
     title?: string;
     description?: string;
-    assignedUserId?: string;
+    assignedUserId?: string | null;
     listId?: string;
     position?: number;
     status?: 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';

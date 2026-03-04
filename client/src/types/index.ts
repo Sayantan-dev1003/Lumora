@@ -11,8 +11,8 @@ export interface Task {
   description?: string;
   listId: string;
   position: number;
-  assignedUserId?: string;
-  assignedUser?: User;
+  assignedUserId?: string | null;
+  assignedUser?: User | null;
   creatorId: string;
   creator?: User;
   createdAt: string;

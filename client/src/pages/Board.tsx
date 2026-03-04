@@ -262,11 +262,12 @@ const Board = () => {
     }
   };
 
-  const handleUpdateTask = async (taskId: string, updates: { title?: string; description?: string; assignedUserId?: string }) => {
+  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
       await updateTask(taskId, updates);
     } catch (error) {
       toast.error("Failed to update task");
+      throw error;
     }
   };
 
