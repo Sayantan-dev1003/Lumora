@@ -63,9 +63,6 @@ const BoardCard = ({ board }: BoardCardProps) => {
                         {board.title}
                     </CardTitle>
                     <div className="flex items-center gap-1.5 shrink-0">
-                        <div className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground whitespace-nowrap">
-                            {formatDistanceToNow(new Date(board.updatedAt), { addSuffix: true })}
-                        </div>
                         {currentUser?.id === board.owner?.id && (
                             <Button
                                 variant="ghost"
@@ -81,6 +78,9 @@ const BoardCard = ({ board }: BoardCardProps) => {
                                 <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                         )}
+                        <div className="text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground whitespace-nowrap">
+                            {formatDistanceToNow(new Date(board.updatedAt), { addSuffix: true })}
+                        </div>
                     </div>
                 </div>
             </CardHeader>
