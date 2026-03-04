@@ -67,7 +67,7 @@ const TaskCard = ({ task }: TaskCardProps) => {
               </div>
 
               {task.assignedUser && (
-                <Avatar className="h-5 w-5 border border-background shrink-0">
+                <Avatar className="h-7 w-7 border border-background shrink-0">
                   <AvatarImage src={task.assignedUser.avatar} />
                   <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
                     {getInitials(task.assignedUser.name)}
