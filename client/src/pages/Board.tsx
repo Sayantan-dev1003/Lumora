@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent, type DragOverEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { fetchBoard, createList, createTask, updateTask, moveTaskApi, deleteTask } from '@/services/api';
+import { fetchBoard, createList, createTask, updateTask, moveTaskApi, deleteTask, deleteBoard, deleteList } from '@/services/api';
 import { useAuthStore } from '@/store/authStore';
 import { joinBoard, leaveBoard, onTaskCreated, onTaskUpdated, onTaskDeleted, onListCreated, onListUpdated, onListDeleted, onActivityCreated, getSocket, onMemberAdded } from '@/services/socket';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ const Board = () => {
   const [addingList, setAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: board, isLoading } = useQuery({
     queryKey: ['board', boardId],
@@ -229,6 +230,29 @@ const Board = () => {
     }
   };
 
+  const handleDeleteList = async (listId: string) => {
+    if (window.confirm('Are you sure you want to delete this list?')) {
+      try {
+        await deleteList(listId);
+      } catch (error) {
+        toast.error("Failed to delete list");
+      }
+    }
+  };
+
+  const handleDeleteBoard = async () => {
+    if (!boardId) return;
+    if (window.confirm('Are you sure you want to delete this board? This action cannot be undone.')) {
+      try {
+        await deleteBoard(boardId);
+        toast.success("Board deleted");
+        navigate('/');
+      } catch (error) {
+        toast.error("Failed to delete board");
+      }
+    }
+  };
+
   const handleUpdateTask = async (taskId: string, updates: { title?: string; description?: string; assignedUserId?: string }) => {
     try {
       await updateTask(taskId, updates);
@@ -268,7 +292,13 @@ const Board = () => {
 
   return (
     <div className="h-full bg-background border-l border-border/40 flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-background to-background">
-      <BoardHeader title={board?.title || 'Board'} members={allMembers} isCompleted={(board as any)?.isCompleted} />
+      <BoardHeader
+        title={board?.title || 'Board'}
+        members={allMembers}
+        isCompleted={(board as any)?.isCompleted}
+        isOwner={board?.ownerId === currentUser?.id}
+        onDeleteBoard={handleDeleteBoard}
+      />
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 md:p-6 scrollbar-thin scrollbar-thumb-border/40 scrollbar-track-transparent">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
@@ -278,7 +308,10 @@ const Board = () => {
                 key={list.id}
                 list={list}
                 onAddTask={handleAddTask}
+                onDeleteList={handleDeleteList}
                 userRole={board?.members.find((m: BoardMember) => m.userId === currentUser?.id)?.role || 'member'}
+                currentUser={currentUser}
+                boardOwnerId={board?.ownerId}
               />
             ))}
 

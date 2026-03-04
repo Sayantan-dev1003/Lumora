@@ -376,3 +376,11 @@ export const addBoardMember = async (boardId: string, userId: string, role: stri
         },
     });
 };
+
+export const isBoardOwner = async (userId: string, boardId: string): Promise<boolean> => {
+    const board = await prisma.board.findUnique({
+        where: { id: boardId },
+        select: { ownerId: true }
+    });
+    return board?.ownerId === userId;
+};

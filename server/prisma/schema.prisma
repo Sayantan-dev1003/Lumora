@@ -18,6 +18,7 @@ model User {
   boardMemberships BoardMember[]
   assignedTasks    Task[]        @relation("AssignedUser")
   createdTasks     Task[]        @relation("TaskCreator")
+  createdLists     List[]        @relation("ListCreator")
   activities       Activity[]
 
   @@index([email])
@@ -59,6 +60,9 @@ model List {
 
   board Board  @relation(fields: [boardId], references: [id])
   tasks Task[]
+
+  creatorId String?
+  creator   User?   @relation("ListCreator", fields: [creatorId], references: [id])
 
   @@index([boardId])
   @@index([boardId, position]) // Optimized for fetching lists in order

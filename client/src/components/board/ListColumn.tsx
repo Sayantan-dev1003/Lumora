@@ -4,16 +4,19 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import TaskCard from './TaskCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, X } from 'lucide-react';
-import type { List } from '@/types';
+import { Plus, X, Trash2 } from 'lucide-react';
+import type { List, User } from '@/types';
 
 interface ListColumnProps {
   list: List;
   onAddTask: (listId: string, title: string) => void;
+  onDeleteList?: (listId: string) => void;
   userRole?: string;
+  currentUser?: User | null;
+  boardOwnerId?: string;
 }
 
-const ListColumn = ({ list, onAddTask, userRole = 'member' }: ListColumnProps) => {
+const ListColumn = ({ list, onAddTask, onDeleteList, userRole = 'member', currentUser, boardOwnerId }: ListColumnProps) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
 
@@ -30,8 +33,15 @@ const ListColumn = ({ list, onAddTask, userRole = 'member' }: ListColumnProps) =
   return (
     <div className="flex-shrink-0 w-80">
       <div className="bg-muted/30 hover:bg-muted/40 transition-colors duration-300 rounded-2xl p-4 flex flex-col max-h-[calc(100vh-10rem)] border border-white/5 shadow-sm backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-4 px-1">
-          <h3 className="font-semibold text-base text-foreground tracking-tight">{list.title}</h3>
+        <div className="flex items-center justify-between mb-4 px-1 group">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-base text-foreground tracking-tight">{list.title}</h3>
+            {(list.creatorId === currentUser?.id || boardOwnerId === currentUser?.id) && onDeleteList && (
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive" onClick={() => onDeleteList(list.id)}>
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
           <span className="text-xs font-medium text-muted-foreground bg-background/50 px-2.5 py-1 rounded-full border border-border/10">
             {list.tasks.length}
           </span>

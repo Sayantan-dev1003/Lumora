@@ -4,6 +4,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ListTodo, CheckCircle2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { getInitials } from '@/lib/utils';
+import { useAuthStore } from '@/store/authStore';
+import { Trash2 } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { deleteBoard } from '@/services/api';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 interface BoardCardProps {
     board: {
@@ -25,17 +31,47 @@ interface BoardCardProps {
                 id: string;
             }>;
         }>;
+        owner?: {
+            id: string;
+        };
     };
 }
 
 const BoardCard = ({ board }: BoardCardProps) => {
     const navigate = useNavigate();
+    const currentUser = useAuthStore(s => s.user);
+    const queryClient = useQueryClient();
+
+    const deleteMutation = useMutation({
+        mutationFn: () => deleteBoard(board.id),
+        onSuccess: () => {
+            toast.success('Board deleted');
+            queryClient.invalidateQueries({ queryKey: ['boards'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+        },
+        onError: () => toast.error('Failed to delete board')
+    });
 
     return (
         <Card
-            className="group cursor-pointer rounded-2xl border-border/40 bg-card hover:bg-gradient-to-br hover:from-card hover:to-accent/5 transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+            className="group cursor-pointer rounded-2xl border-border/40 bg-card hover:bg-gradient-to-br hover:from-card hover:to-accent/5 transition-all duration-300 hover:shadow-md hover:-translate-y-1 relative"
             onClick={() => navigate(`/board/${board.id}`)}
         >
+            {currentUser?.id === board.owner?.id && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive z-10 h-8 w-8"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (window.confirm('Are you sure you want to delete this board? This action cannot be undone.')) {
+                            deleteMutation.mutate();
+                        }
+                    }}
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            )}
             <CardHeader className="pb-3 pt-5">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-lg font-semibold tracking-tight line-clamp-1 flex items-center gap-2">

@@ -28,6 +28,7 @@ export const createList = async (userId: string, input: CreateListInput) => {
                 title: input.title,
                 boardId: input.boardId,
                 position: nextPosition,
+                creatorId: userId,
             },
         });
 
@@ -153,12 +154,20 @@ export const deleteList = async (listId: string, userId: string) => {
 
         if (!list) return;
 
-        // Check Admin
-        const member = await tx.boardMember.findUnique({
-            where: { boardId_userId: { boardId: list.boardId, userId } }
-        });
-        if (!member || member.role !== 'admin') {
-            throw new Error("Forbidden: Only admins can manage lists");
+        // Check if user is the creator of the list, OR the owner of the board
+        let canDelete = list.creatorId === userId;
+        if (!canDelete) {
+            const board = await tx.board.findUnique({
+                where: { id: list.boardId },
+                select: { ownerId: true }
+            });
+            if (board?.ownerId === userId) {
+                canDelete = true;
+            }
+        }
+
+        if (!canDelete) {
+            throw new Error("Forbidden: Only the list creator or board owner can delete this list");
         }
 
         if (!list) return;

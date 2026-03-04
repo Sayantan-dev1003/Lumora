@@ -68,9 +68,9 @@ export const deleteBoard = async (req: Request, res: Response, next: NextFunctio
             return errorResponse(res, "Board not found", 404);
         }
 
-        const isAdmin = await boardService.isBoardAdmin(userId, boardId);
-        if (!isAdmin) {
-            return errorResponse(res, "Access denied. Admin role required.", 403);
+        const isOwner = await boardService.isBoardOwner(userId, boardId);
+        if (!isOwner) {
+            return errorResponse(res, "Access denied. Only the board owner can delete this board.", 403);
         }
 
         await boardService.deleteBoard(boardId, userId);

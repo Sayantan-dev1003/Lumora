@@ -1,14 +1,18 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import type { User } from '@/types';
 import { getInitials } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
 
 interface BoardHeaderProps {
   title: string;
   members: User[];
   isCompleted?: boolean;
+  onDeleteBoard?: () => void;
+  isOwner?: boolean;
 }
 
-const BoardHeader = ({ title, members, isCompleted }: BoardHeaderProps) => {
+const BoardHeader = ({ title, members, isCompleted, onDeleteBoard, isOwner }: BoardHeaderProps) => {
   return (
     <header className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-border/40 bg-background/60 backdrop-blur-xl sticky top-0 z-10 transition-all duration-300">
       <div className="flex items-center gap-4">
@@ -23,6 +27,12 @@ const BoardHeader = ({ title, members, isCompleted }: BoardHeaderProps) => {
       </div>
 
       <div className="flex items-center gap-4">
+        {isOwner && onDeleteBoard && (
+          <Button variant="ghost" size="sm" onClick={onDeleteBoard} className="text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors">
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete Board
+          </Button>
+        )}
         <div className="flex items-center -space-x-3 hover:space-x-1 transition-all duration-300">
           {members.slice(0, 5).map((m, index) => (
             <Avatar

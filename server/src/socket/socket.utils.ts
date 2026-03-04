@@ -16,6 +16,8 @@ export const emitToBoardSecurely = async (
     entity: any
 ) => {
     const io = getIO();
+    if (!io || !io.sockets || !io.sockets.adapter) return;
+
     const room = io.sockets.adapter.rooms.get(boardId);
 
     if (!room) return;

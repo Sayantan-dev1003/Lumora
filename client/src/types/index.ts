@@ -26,6 +26,7 @@ export interface List {
   boardId: string;
   position: number;
   tasks: Task[];
+  creatorId?: string;
 }
 
 export interface BoardMember {
@@ -39,6 +40,8 @@ export interface BoardMember {
 export interface Board {
   id: string;
   title: string;
+  ownerId?: string;
+  owner?: User;
   members: BoardMember[];
   lists: List[];
   createdAt: string;
