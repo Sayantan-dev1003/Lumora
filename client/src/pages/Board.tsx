@@ -231,6 +231,19 @@ const Board = () => {
   const handleAddTask = useCallback(async (listId: string, title: string) => {
     try {
       const newTask = await createTask(listId, title);
+
+      queryClient.setQueryData(['board', boardId], (oldData: BoardType | undefined) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          lists: oldData.lists.map(list =>
+            list.id === listId
+              ? { ...list, tasks: [...list.tasks, newTask] }
+              : list
+          )
+        };
+      });
+
       setLists(prev => {
         const alreadyExists = prev.some(l => l.tasks.some(t => t.id === newTask.id));
         if (alreadyExists) return prev;
@@ -244,12 +257,26 @@ const Board = () => {
     } catch (error) {
       toast.error("Failed to create task");
     }
-  }, []);
+  }, [boardId, queryClient]);
 
   const handleAddList = async () => {
     if (!newListTitle.trim() || !boardId) return;
     try {
-      await createList(boardId, newListTitle.trim());
+      const newList = await createList(boardId, newListTitle.trim());
+
+      queryClient.setQueryData(['board', boardId], (oldData: BoardType | undefined) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          lists: [...oldData.lists, { ...newList, tasks: [] }]
+        };
+      });
+
+      setLists(prev => {
+        if (prev.find(l => l.id === newList.id)) return prev;
+        return [...prev, { ...newList, tasks: [] }];
+      });
+
       setNewListTitle('');
       setAddingList(false);
     } catch (error) {

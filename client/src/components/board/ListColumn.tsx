@@ -22,9 +22,9 @@ const ListColumn = ({ list, onAddTask, onDeleteList, userRole = 'member', curren
 
   const { setNodeRef } = useDroppable({ id: list.id });
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (newTitle.trim()) {
-      onAddTask(list.id, newTitle.trim());
+      await onAddTask(list.id, newTitle.trim());
       setNewTitle('');
       setIsAdding(false);
     }
