@@ -114,16 +114,8 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
                 },
                 lists: {
                     select: {
-                        _count: {
-                            select: {
-                                tasks: {
-                                    where: { status: { not: "DONE" } }
-                                }
-                            }
-                        },
                         tasks: {
-                            where: { assignedUserId: userId },
-                            select: { id: true, status: true }
+                            select: { id: true, status: true, assignedUserId: true, creatorId: true }
                         }
                     }
                 }
@@ -132,23 +124,34 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
         prisma.board.count({ where }),
     ]);
 
-    const boardsWithCompletedFlag = boards.map(board => {
-        let activeTaskCount = 0;
-        let totalAssignedTaskCount = 0;
-        let activeAssignedTaskCount = 0;
+    const boardIds = boards.map(b => b.id);
+    const userMemberships = await prisma.boardMember.findMany({
+        where: { userId, boardId: { in: boardIds } },
+        select: { boardId: true, role: true }
+    });
+    const membershipMap = new Map(userMemberships.map(m => [m.boardId, m.role]));
 
-        board.lists.forEach(list => {
-            activeTaskCount += list._count.tasks;
-            totalAssignedTaskCount += list.tasks.length;
-            activeAssignedTaskCount += list.tasks.filter(t => t.status !== "DONE").length;
+    const boardsWithCompletedFlag = boards.map(board => {
+        const role = membershipMap.get(board.id);
+        const isAdmin = role === "admin" || board.ownerId === userId;
+
+        const allVisibleTasks = board.lists.flatMap(list => list.tasks).filter(task => {
+            if (isAdmin) return true;
+            return task.assignedUserId === userId || task.creatorId === userId;
         });
+
+        const activeVisibleTasks = allVisibleTasks.filter(t => t.status !== "DONE");
+        const assignedVisibleTasks = allVisibleTasks.filter(t => t.assignedUserId === userId);
+        const activeAssignedTasks = assignedVisibleTasks.filter(t => t.status !== "DONE");
+
+        const isCompleted = allVisibleTasks.length > 0 && allVisibleTasks.every(t => t.status === "DONE");
 
         return {
             ...board,
-            isCompleted: activeTaskCount === 0 && totalAssignedTaskCount > 0,
+            isCompleted,
             stats: {
-                assignedTaskCount: activeAssignedTaskCount,
-                totalTaskCount: activeTaskCount
+                assignedTaskCount: activeAssignedTasks.length,
+                totalTaskCount: activeVisibleTasks.length
             }
         };
     });
