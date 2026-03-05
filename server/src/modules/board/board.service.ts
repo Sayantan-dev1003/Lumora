@@ -123,7 +123,7 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
                         },
                         tasks: {
                             where: { assignedUserId: userId },
-                            select: { id: true }
+                            select: { id: true, status: true }
                         }
                     }
                 }
@@ -133,26 +133,23 @@ export const getBoards = async (userId: string, page: number = 1, limit: number 
     ]);
 
     const boardsWithCompletedFlag = boards.map(board => {
-        let isCompleted = false;
-
         let activeTaskCount = 0;
+        let totalAssignedTaskCount = 0;
+        let activeAssignedTaskCount = 0;
+
         board.lists.forEach(list => {
             activeTaskCount += list._count.tasks;
-        });
-
-        // total matched tasks assigned to user
-        let totalAssignedTaskCount = 0;
-        board.lists.forEach(list => {
             totalAssignedTaskCount += list.tasks.length;
+            activeAssignedTaskCount += list.tasks.filter(t => t.status !== "DONE").length;
         });
 
-        // If there are assigned tasks, check if they are all done. 
-        // Wait, the lists._count.tasks counts *any* task in the list that is not DONE.
-        // It's more accurate to count total tasks vs remaining tasks.
         return {
             ...board,
-            // we will override list later, but just keeping standard format
-            isCompleted: activeTaskCount === 0 && totalAssignedTaskCount > 0
+            isCompleted: activeTaskCount === 0 && totalAssignedTaskCount > 0,
+            stats: {
+                assignedTaskCount: activeAssignedTaskCount,
+                totalTaskCount: activeTaskCount
+            }
         };
     });
 
@@ -232,10 +229,9 @@ export const getBoardById = async (boardId: string, userId: string) => {
 
         if (!board) return null;
 
-        // Check if board is completed (all assigned tasks are done)
-        const isCompleted = board.lists.length > 0 && board.lists.every(list =>
-            list.tasks.length > 0 && list.tasks.every(task => task.status === "DONE")
-        );
+        // Check if board is completed (all tasks are done)
+        const allTasks = board.lists.flatMap(list => list.tasks);
+        const isCompleted = allTasks.length > 0 && allTasks.every(task => task.status === "DONE");
 
         return { ...board, isCompleted };
     } else {
@@ -290,9 +286,8 @@ export const getBoardById = async (boardId: string, userId: string) => {
         board.lists = board.lists.filter(list => list.tasks.length > 0);
 
         // Check if board is completed (all assigned tasks are done)
-        const isCompleted = board.lists.length > 0 && board.lists.every(list =>
-            list.tasks.length > 0 && list.tasks.every(task => task.status === "DONE")
-        );
+        const allTasks = board.lists.flatMap(list => list.tasks);
+        const isCompleted = allTasks.length > 0 && allTasks.every(task => task.status === "DONE");
 
         return { ...board, isCompleted };
     }

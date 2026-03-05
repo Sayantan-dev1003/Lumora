@@ -98,8 +98,8 @@ const BoardCard = ({ board }: BoardCardProps) => {
                                 );
                             }
 
-                            const assignedTaskCount = board.lists?.reduce((acc: number, list: any) => acc + (list.tasks?.length || 0), 0) || 0;
-                            const totalTaskCount = board.lists?.reduce((acc: number, list: any) => acc + (list._count?.tasks || 0), 0) || 0;
+                            const assignedTaskCount = (board as any).stats?.assignedTaskCount ?? (board.lists?.reduce((acc: number, list: any) => acc + (list.tasks?.filter((t: any) => t.status !== "DONE").length || 0), 0) || 0);
+                            const totalTaskCount = (board as any).stats?.totalTaskCount ?? (board.lists?.reduce((acc: number, list: any) => acc + (list._count?.tasks || 0), 0) || 0);
                             const hasAssignedTasks = assignedTaskCount > 0;
 
                             return (
