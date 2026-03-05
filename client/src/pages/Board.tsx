@@ -45,11 +45,16 @@ const Board = () => {
       joinBoard(boardId);
 
       const handleTaskCreated = (newTask: Task) => {
-        setLists(prev => prev.map(list =>
-          list.id === newTask.listId
-            ? { ...list, tasks: [...list.tasks, newTask] }
-            : list
-        ));
+        setLists(prev => {
+          const alreadyExists = prev.some(l => l.tasks.some(t => t.id === newTask.id));
+          if (alreadyExists) return prev;
+
+          return prev.map(list =>
+            list.id === newTask.listId
+              ? { ...list, tasks: [...list.tasks, newTask] }
+              : list
+          );
+        });
         toast.success(`Task "${newTask.title}" created`);
       };
 
@@ -225,7 +230,17 @@ const Board = () => {
 
   const handleAddTask = useCallback(async (listId: string, title: string) => {
     try {
-      await createTask(listId, title);
+      const newTask = await createTask(listId, title);
+      setLists(prev => {
+        const alreadyExists = prev.some(l => l.tasks.some(t => t.id === newTask.id));
+        if (alreadyExists) return prev;
+
+        return prev.map(list =>
+          list.id === newTask.listId
+            ? { ...list, tasks: [...list.tasks, newTask] }
+            : list
+        );
+      });
     } catch (error) {
       toast.error("Failed to create task");
     }
@@ -282,7 +297,26 @@ const Board = () => {
 
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     try {
-      await updateTask(taskId, updates);
+      const updatedTask = await updateTask(taskId, updates);
+
+      setLists(prev => {
+        const taskExists = prev.some(l => l.tasks.some(t => t.id === updatedTask.id));
+        if (!taskExists) return prev;
+
+        const listsWithoutTask = prev.map(l => ({
+          ...l,
+          tasks: l.tasks.filter(t => t.id !== updatedTask.id)
+        }));
+
+        return listsWithoutTask.map(l =>
+          l.id === updatedTask.listId
+            ? {
+              ...l,
+              tasks: [...l.tasks, updatedTask].sort((a, b) => a.position - b.position)
+            }
+            : l
+        );
+      });
     } catch (error) {
       toast.error("Failed to update task");
       throw error;

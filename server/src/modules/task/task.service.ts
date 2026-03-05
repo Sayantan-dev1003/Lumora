@@ -1,12 +1,10 @@
-import { Task } from "@prisma/client";
 import prisma from "../../config/db";
 import { CreateTaskInput, UpdateTaskInput, MoveTaskInput } from "./task.types";
 
 import { logActivity } from "../activity/activity.service";
 import { getIO } from "../../socket/socket";
 import { emitToBoardSecurely } from "../../socket/socket.utils";
-import { addBoardMember, isBoardMember, isBoardAdmin } from "../board/board.service";
-import { canEditTask, canViewTask } from "../../utils/permissions";
+import { canEditTask } from "../../utils/permissions";
 
 export const createTask = async (userId: string, input: CreateTaskInput) => {
     const result = await prisma.$transaction(async (tx) => {
@@ -28,6 +26,11 @@ export const createTask = async (userId: string, input: CreateTaskInput) => {
                 creatorId: userId,
                 status: "TODO",
             },
+            include: {
+                assignedUser: {
+                    select: { id: true, name: true, email: true }
+                }
+            }
         });
 
         // Get boardId
@@ -162,7 +165,10 @@ export const moveTask = async (taskId: string, userId: string, input: MoveTaskIn
                 if (reordered[i].id === taskId) {
                     savedTask = await tx.task.update({
                         where: { id: taskId },
-                        data: { position: i + 1 }
+                        data: { position: i + 1 },
+                        include: {
+                            assignedUser: { select: { id: true, name: true, email: true } }
+                        }
                     });
                 } else {
                     if (reordered[i].position !== i + 1) {
@@ -206,6 +212,9 @@ export const moveTask = async (taskId: string, userId: string, input: MoveTaskIn
                 data: {
                     listId: destinationListId,
                     position: destinationIndex + 1
+                },
+                include: {
+                    assignedUser: { select: { id: true, name: true, email: true } }
                 }
             });
 
@@ -540,6 +549,9 @@ export const updateTask = async (taskId: string, userId: string, input: UpdateTa
                 position: finalPosition,
                 status: input.status !== undefined ? input.status : existingTask.status,
             },
+            include: {
+                assignedUser: { select: { id: true, name: true, email: true } }
+            }
         });
 
         if (boardId) {
